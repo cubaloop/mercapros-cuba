@@ -1,0 +1,905 @@
+﻿<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mercapros Cuba | Plataforma Mayorista B2B & Mercado B2C a Domicilio</title>
+  <meta name="description" content="Mercapros: La Super-App de comercio B2B y B2C para Cuba. ImportaciÃ³n de contenedores para Mipymes, mercado mayorista para TCP y entregas a domicilio calculadas por kilÃ³metro en La Habana y provincias." />
+  <meta name="keywords" content="Mercapros Cuba, Mipymes Cuba, TCP Cuba, contenedores Mariel, compras online Cuba, carnes y combos La Habana, mercado mayorista Cuba" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://mercapros.cu/" />
+
+  <!-- Open Graph / Social SEO -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Mercapros Cuba | Plataforma B2B Contenedores, Mipymes, TCP y Hogar" />
+  <meta property="og:description" content="Conecta exportadores internacionales por contenedores, Mipymes mayoristas/minoristas, TCP y hogares cubanos con logÃ­stica GPS por kilÃ³metro y Modo Ultra-RÃ¡pido Sin ImÃ¡genes." />
+  <meta property="og:image" content="assets/hero-b2b-port.jpg" />
+
+  <!-- Schema.org JSON-LD Estructurado B2B + B2C -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    "name": "Mercapros Cuba",
+    "url": "https://mercapros.cu",
+    "description": "Plataforma de mercadeo hÃ­brida B2B (Exportadores de contenedores, Mipymes y TCP) y B2C con cÃ¡lculo de domicilio GPS por kilÃ³metro en Cuba.",
+    "areaServed": {
+      "@type": "Country",
+      "name": "Cuba"
+    },
+    "currenciesAccepted": "USD, CUP, MLC",
+    "paymentAccepted": "Transferencia Internacional B2B, Tarjeta, TransfermÃ³vil, EnZona, Efectivo"
+  }
+  </script>
+
+  <!-- TipografÃ­as Display & UI (Fraunces + Plus Jakarta Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- IconografÃ­a FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <!-- Leaflet CSS & JS para el Rastreo de Direcciones y CÃ¡lculo de Tarifa por Km en Cuba -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
+          },
+          colors: {
+            alabaster: '#F6F1E7',
+            surfaceLight: '#FFFDF8',
+            charcoalInk: '#14201B',
+            brassAccent: '#7A5A1E',
+            forestDark: '#09100D',
+            surfaceDark: '#121D18',
+            ivoryText: '#F2EDE0',
+            brassLight: '#D9B76F'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Dual-Theme Light-First Luxury & Conectividad Cubana */
+    body {
+      background-color: #F6F1E7;
+      color: #14201B;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    html.dark body {
+      background-color: #09100D;
+      color: #F2EDE0;
+    }
+    /* Scrollbar sutil para barras horizontales estilo Careem Super-App */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Arch Frame clÃ¡sico de vanguardia */
+    .arch-frame {
+      border-top-left-radius: 9999px;
+      border-top-right-radius: 9999px;
+      border-bottom-left-radius: 1.5rem;
+      border-bottom-right-radius: 1.5rem;
+    }
+    /* Cuando estÃ¡ activo el Modo Sin ImÃ¡genes (Low-Data Mode) se ocultan banners fotogrÃ¡ficos pesados */
+    body.low-data-mode .hide-on-lowdata {
+      display: none !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#7A5A1E] selection:text-white">
+
+  <!-- 1. TOP MARQUEE DE OFERTAS Y CONECTIVIDAD CUBANA -->
+  <div class="bg-[#14201B] text-[#F6F1E7] dark:bg-[#121D18] border-b border-white/10 py-2 px-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div id="top-announcements-bar" class="flex flex-wrap items-center gap-2 overflow-hidden"></div>
+      <div class="flex items-center gap-3 ml-auto text-xs">
+        <span id="supabase-sync-indicator" class="hidden sm:inline-block text-[11px] opacity-75 font-mono">
+          Dual-Layer Instant-Boot (0ms)
+        </span>
+        <!-- BotÃ³n Destacado Con Foto / Sin ImÃ¡genes (Especial Conectividad de Cuba) -->
+        <button onclick="toggleLowDataMode()" class="js-lowdata-pill px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-[#F6F1E7] font-bold text-[11px] transition-all flex items-center">
+          <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>VersiÃ³n Con Fotos</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. CABECERA PRINCIPAL INSPIRADA EN SUPER-APP CAREEM / CREEME -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-[#F6F1E7]/95 dark:bg-[#09100D]/95 border-b border-stone-300/70 dark:border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Marca & BotÃ³n MenÃº MÃ³vil -->
+      <div class="flex items-center gap-3">
+        <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')" aria-label="Abrir MenÃº" class="lg:hidden w-10 h-10 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/10 flex items-center justify-center">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="#" class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-[#14201B] dark:bg-[#D9B76F] text-[#F6F1E7] dark:text-[#09100D] flex items-center justify-center font-display font-extrabold text-xl shadow-sm">
+            M
+          </div>
+          <div>
+            <span class="font-display font-extrabold text-xl tracking-tight block leading-none">MERCAPROS</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7A5A1E] dark:text-[#D9B76F] block mt-0.5">Cuba B2B â€¢ B2C Super-App</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Selector de Provincia, Municipio y Mapa GPS (Inspirado en Supermarket 23 + Careem Now) -->
+      <div class="flex items-center gap-2 bg-[#FFFDF8] dark:bg-[#121D18] px-3 py-1.5 rounded-2xl border border-stone-300/80 dark:border-white/10 shadow-sm">
+        <i class="fa-solid fa-location-dot text-[#7A5A1E] dark:text-[#D9B76F]"></i>
+        <div class="text-xs">
+          <span class="text-[10px] uppercase font-bold opacity-60 block leading-none">Entregar en Cuba:</span>
+          <div class="flex items-center gap-1 mt-0.5">
+            <select id="header-province-select" onchange="onProvinceChange(this.value)" aria-label="Provincia" class="bg-transparent font-bold text-xs focus:outline-none cursor-pointer"></select>
+            <span class="opacity-40">/</span>
+            <select id="header-municipality-select" onchange="onMunicipalityChange(this.value)" aria-label="Municipio" class="bg-transparent font-bold text-xs text-[#7A5A1E] dark:text-[#D9B76F] focus:outline-none cursor-pointer max-w-[155px] truncate"></select>
+          </div>
+        </div>
+        <button onclick="openDeliveryMapModal()" class="ml-1 px-2.5 py-1.5 rounded-xl bg-[#7A5A1E]/15 hover:bg-[#7A5A1E] text-[#7A5A1E] dark:text-[#D9B76F] hover:text-white text-xs font-bold transition-all flex items-center gap-1" title="Rastrear direcciÃ³n en mapa y calcular precio por km">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span class="hidden sm:inline">Mapa $/km</span>
+        </button>
+      </div>
+
+      <!-- Buscador RÃ¡pido por Producto, SKU o Negocio -->
+      <div class="flex-1 min-w-[220px] max-w-md relative order-last lg:order-none w-full lg:w-auto">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs opacity-50"></i>
+        <input
+          type="search"
+          oninput="handleSearchInput(this.value)"
+          placeholder="Buscar contenedores, carnes, combos, arroz, inversores..."
+          class="w-full pl-9 pr-4 py-2 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#7A5A1E]"
+        />
+      </div>
+
+      <!-- Acciones de Cabecera: Moneda, Tema, Admin, WhatsApp (Solo Ãcono) y Carrito -->
+      <div class="flex items-center gap-2">
+        <!-- Selector Multi-Divisa (USD / CUP / MLC) -->
+        <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select px-2.5 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 text-xs font-extrabold cursor-pointer">
+          <option value="USD">USD ($)</option>
+          <option value="CUP">CUP ($)</option>
+          <option value="MLC">MLC ($)</option>
+        </select>
+
+        <!-- Alternador Modo Claro / Modo Oscuro -->
+        <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-9 h-9 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 flex items-center justify-center hover:border-[#7A5A1E]">
+          <i class="fa-solid fa-circle-half-stroke text-sm"></i>
+        </button>
+
+        <!-- PÃ­ldora Dorada de AdministraciÃ³n (Desbloqueada al Autenticarse) -->
+        <button id="header-admin-gold-pill" onclick="openAdminModal()" class="hidden px-3 py-2 rounded-xl bg-gradient-to-r from-[#7A5A1E] to-[#D9B76F] text-white font-extrabold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-crown"></i>
+          <span>Admin Activo</span>
+        </button>
+
+        <!-- BotÃ³n de Acceso al Dashboard de Negocios (Exportador / Mipyme / TCP) -->
+        <button onclick="openAdminModal()" class="px-3 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 hover:border-[#7A5A1E] text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-sliders text-[#7A5A1E] dark:text-[#D9B76F]"></i>
+          <span class="hidden sm:inline">Panel Negocios</span>
+        </button>
+
+        <!-- Regla Estricta: BotÃ³n WhatsApp en Header SOLO ÃCONO -->
+        <a href="https://wa.me/971508379080" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+        </a>
+
+        <!-- BotÃ³n Carrito Multinivel -->
+        <button onclick="toggleCartDrawer(true)" class="relative px-3.5 py-2 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-[#F6F1E7] dark:text-[#09100D] font-bold text-xs flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-[#7A5A1E] text-white text-[10px] font-extrabold">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. CONMUTADOR DE NIVELES DE USUARIO Y PERMISOS (EXPORTADOR / MIPYME / TCP / B2C) -->
+    <div class="bg-[#FFFDF8]/90 dark:bg-[#121D18]/90 border-t border-stone-200/80 dark:border-white/5 py-2 px-4">
+      <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F] shrink-0 mr-1">
+          <i class="fa-solid fa-user-shield mr-1"></i>Nivel de Acceso:
+        </span>
+        <button data-role="ALL_VIEW" onclick="setUserRole('ALL_VIEW')" class="js-role-btn shrink-0">
+          <i class="fa-solid fa-layer-group"></i> Vista Global
+        </button>
+        <button data-role="EXPORTADOR_B2B" onclick="setUserRole('EXPORTADOR_B2B')" class="js-role-btn shrink-0">
+          <i class="fa-solid fa-ship"></i> 1. Exportador (Contenedores)
+        </button>
+        <button data-role="MIPYME" onclick="setUserRole('MIPYME')" class="js-role-btn shrink-0">
+          <i class="fa-solid fa-building-shield"></i> 2A. Mipyme (Mayorista & Minorista)
+        </button>
+        <button data-role="TCP" onclick="setUserRole('TCP')" class="js-role-btn shrink-0">
+          <i class="fa-solid fa-store"></i> 2B. TCP (Compra Mayor/Menor â€¢ Vende Minorista)
+        </button>
+        <button data-role="CLIENTE_B2C" onclick="setUserRole('CLIENTE_B2C')" class="js-role-btn shrink-0">
+          <i class="fa-solid fa-house-user"></i> 3. Cliente Hogar (B2C)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-8">
+
+    <!-- Explicador en Vivo de Permisos segÃºn Nivel Seleccionado -->
+    <section id="active-role-explainer" class="rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200/90 dark:border-white/10 shadow-sm"></section>
+
+    <!-- 4. SUPER-APP BENTO HERO (INSPIRADO EN CAREEM / CREEME + CONECTIVIDAD CUBANA) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <!-- Tarjeta Principal Hero con Arch Frame opcional y conmutador rÃ¡pido Sin ImÃ¡genes -->
+      <div class="lg:col-span-7 rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#14201B] via-[#1B2B24] to-[#2C2211] text-[#F6F1E7] relative overflow-hidden flex flex-col justify-between shadow-lg">
+        <div class="relative z-10 space-y-3 max-w-xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-xs font-bold text-[#D9B76F]">
+            <i class="fa-solid fa-compass"></i>
+            <span>Ecosistema Comercial de Cuba â€¢ B2B & B2C</span>
+          </div>
+          <h1 class="font-display text-2xl sm:text-4xl font-extrabold leading-tight">
+            Del Contenedor en Puerto a la Mesa del Hogar Cubano.
+          </h1>
+          <p class="text-xs sm:text-sm text-[#F2EDE0]/85 leading-relaxed">
+            Conectamos <strong>Empresas Exportadoras</strong> (contenedores 20'/40'), <strong>Mipymes</strong> (comercio mayorista y minorista) y <strong>TCP</strong> (abasto mayorista y venta minorista) con tarifado de domicilio GPS exacto por kilÃ³metro.
+          </p>
+        </div>
+
+        <div class="relative z-10 mt-6 flex flex-wrap items-center gap-3">
+          <button onclick="openDeliveryMapModal()" class="px-5 py-3 rounded-2xl bg-[#D9B76F] hover:bg-[#e5c782] text-[#09100D] font-extrabold text-xs transition-all shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-location-crosshairs"></i>
+            <span>Calcular Mi Domicilio por Km</span>
+          </button>
+          <button onclick="openAdminModal()" class="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-2">
+            <i class="fa-solid fa-Gauged-high"></i>
+            <span>Abrir Dashboard Mipyme / TCP</span>
+          </button>
+          <button onclick="toggleLowDataMode()" class="px-4 py-3 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-xs border border-amber-400/30 transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-gauge-Simple-high"></i>
+            <span class="js-lowdata-toggle-label">VersiÃ³n Con Fotos</span>
+          </button>
+        </div>
+
+        <!-- Imagen decorativa en Arch Frame (Se oculta automÃ¡ticamente en Modo Sin ImÃ¡genes) -->
+        <div class="hide-on-lowdata hidden xl:block absolute right-6 bottom-6 w-48 h-56 arch-frame overflow-hidden border-2 border-[#D9B76F]/40 shadow-2xl">
+          <img src="assets/hero-b2b-port.jpg" alt="Terminal MarÃ­tima y LogÃ­stica Cuba" class="w-full h-full object-cover" />
+        </div>
+      </div>
+
+      <!-- 4 MÃ³dulos RÃ¡pidos Super-App (Estilo Careem / Creeme) -->
+      <div id="superapp-modules-grid" class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+    </section>
+
+    <!-- 5. BARRA DE CATEGORÃAS (BASADA EN SUPERMARKET 23 + CONTENEDORES) -->
+    <section class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-display text-xl font-bold">Departamentos del Mercado</h2>
+          <p class="text-xs opacity-75">CategorÃ­as esenciales adaptadas al abasto familiar y mayorista en Cuba</p>
+        </div>
+        <!-- Filtros de Modalidad de Oferta -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button data-mode="ALL" onclick="setSaleModeFilter('ALL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7A5A1E] text-white shadow-sm">
+            Todos
+          </button>
+          <button data-mode="FLASH" onclick="setSaleModeFilter('FLASH')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
+            <i class="fa-solid fa-fire text-red-500 mr-1"></i>Ofertas RelÃ¡mpago
+          </button>
+          <button data-mode="CONTAINER_B2B" onclick="setSaleModeFilter('CONTAINER_B2B')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
+            Contenedores 20'/40'
+          </button>
+          <button data-mode="WHOLESALE" onclick="setSaleModeFilter('WHOLESALE')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
+            Mayorista (Cajas/Sacos)
+          </button>
+          <button data-mode="RETAIL" onclick="setSaleModeFilter('RETAIL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
+            Minorista (Al Detalle)
+          </button>
+        </div>
+      </div>
+
+      <div id="categories-scroll-bar" class="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1"></div>
+    </section>
+
+    <!-- 6. CATÃLOGO DE PRODUCTOS Y OFERTAS ADMINISTRABLES -->
+    <section class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
+        <div class="flex items-center gap-2">
+          <span id="catalog-results-count" class="text-xs font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">10 productos disponibles</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <label for="catalog-sort-select" class="opacity-75 font-semibold">Ordenar por:</label>
+          <select id="catalog-sort-select" onchange="handleSortChange(this.value)" class="px-3 py-1.5 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/10 font-bold text-xs">
+            <option value="featured">Destacados por Nivel</option>
+            <option value="discount">Mayor % de Descuento</option>
+            <option value="price-asc">Precio: Menor a Mayor</option>
+            <option value="price-desc">Precio: Mayor a Menor</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grilla Bento Responsiva de Productos -->
+      <div id="catalog-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+    </section>
+
+    <!-- 7. DIRECTORIO DE PROVEEDORES VERIFICADOS (EXPORTADORES, MIPYMES Y TCP) CON TARIFA $/KM Y RESEÃ‘AS GOOGLE MAPS -->
+    <section class="space-y-4 pt-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-display text-xl font-bold">Empresas, Mipymes y TCP Verificados</h2>
+          <p class="text-xs opacity-75">Cada negocio configura su ubicaciÃ³n GPS de almacÃ©n y su precio por kilÃ³metro recorrido</p>
+        </div>
+        <button onclick="openDeliveryMapModal()" class="text-xs font-bold text-[#7A5A1E] dark:text-[#D9B76F] underline flex items-center gap-1">
+          <i class="fa-solid fa-map"></i> Ver Todos los Almacenes en el Mapa de Cuba
+        </button>
+      </div>
+      <div id="vendors-showcase-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- 8. ARQUITECTURA DE NIVELES COMERCIALES (TABLA TRANSPARENTE B2B / B2C) -->
+    <section class="rounded-3xl p-6 bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200/90 dark:border-white/10 shadow-sm space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-widest text-[#7A5A1E] dark:text-[#D9B76F]">Reglas de Negocio Oficiales</span>
+          <h2 class="font-display text-xl font-bold">Niveles de Acceso y Permisos en Mercapros Cuba</h2>
+        </div>
+        <button onclick="openAdminModal()" class="px-4 py-2 rounded-xl bg-[#14201B] text-white dark:bg-[#D9B76F] dark:text-black text-xs font-bold">
+          Probar Permisos en el Dashboard
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-stone-200 dark:border-white/10 text-[11px] uppercase opacity-75">
+              <th class="py-2.5 pr-3">Nivel de Actor</th>
+              <th class="py-2.5 px-3">Permiso de Compra</th>
+              <th class="py-2.5 px-3">Permiso de Venta</th>
+              <th class="py-2.5 pl-3">LogÃ­stica & Tarifado GPS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-200/60 dark:divide-white/10 font-medium">
+            <tr>
+              <td class="py-3 pr-3 font-bold"><i class="fa-solid fa-ship text-emerald-700 mr-1.5"></i>1. Empresa Extranjera</td>
+              <td class="py-3 px-3">Insumos globales / ExportaciÃ³n</td>
+              <td class="py-3 px-3 font-bold text-emerald-800 dark:text-emerald-300">Vende por Contenedores (20'/40') a Cuba</td>
+              <td class="py-3 pl-3">CIF Puerto ZED Mariel / Puerto Habana</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-3 font-bold"><i class="fa-solid fa-building-shield text-[#7A5A1E] mr-1.5"></i>2A. Mipyme Cubana</td>
+              <td class="py-3 px-3">Compra Contenedores y Mayorista</td>
+              <td class="py-3 px-3 font-bold text-amber-900 dark:text-amber-300">Vende Mayorista (Cajas/Sacos) y Minorista</td>
+              <td class="py-3 pl-3">Tarifa Base + Precio $/km configurable en Mapa</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-3 font-bold"><i class="fa-solid fa-store text-teal-700 mr-1.5"></i>2B. TCP (Cuenta Propia)</td>
+              <td class="py-3 px-3">Compra Mayorista y Minorista</td>
+              <td class="py-3 px-3 font-bold text-teal-800 dark:text-teal-300">Vende EXCLUSIVAMENTE Minorista (Al Detalle)</td>
+              <td class="py-3 pl-3">Tarifa Base + Precio $/km configurable en Mapa</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-3 font-bold"><i class="fa-solid fa-house-chimney-user text-stone-700 mr-1.5"></i>3. Consumidor / Familia</td>
+              <td class="py-3 px-3">Compra Minorista y Combos Familiares</td>
+              <td class="py-3 px-3 opacity-60">No aplica (Consumidor Final)</td>
+              <td class="py-3 pl-3">Rastreo de direcciÃ³n en Mapa con costo exacto por km</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- 9. MODAL DE MAPA INTERACTIVO GPS Y CALCULADORA DE DOMICILIO POR KILÃ“METRO -->
+  <div id="delivery-map-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">GeolocalizaciÃ³n y Domicilio Exacto</span>
+          <h3 class="font-display text-xl font-bold">Rastreo de DirecciÃ³n y CÃ¡lculo de Precio por KilÃ³metro</h3>
+        </div>
+        <button onclick="closeDeliveryMapModal()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 flex items-center justify-center font-bold">âœ•</button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Mapa Interactivo Leaflet -->
+        <div class="lg:col-span-7 space-y-2">
+          <div id="cuba-leaflet-map" class="w-full h-[300px] sm:h-[340px] rounded-2xl border border-stone-300 dark:border-white/10 z-10"></div>
+          <div class="flex items-center justify-between text-[11px] opacity-80">
+            <span><i class="fa-solid fa-hand-pointer mr-1 text-[#7A5A1E]"></i>Haz clic en tu cuadra o arrastra el marcador azul para recalcular distancias.</span>
+            <span id="map-user-coords-badge" class="font-mono font-bold">GPS: 23.1330, -82.3830</span>
+          </div>
+        </div>
+
+        <!-- Panel de DirecciÃ³n y Tabla Comparativa de Tarifas $/km por Negocio -->
+        <div class="lg:col-span-5 flex flex-col justify-between space-y-3">
+          <div class="space-y-2.5">
+            <label class="block text-xs font-bold">DirecciÃ³n Exacta de Entrega en Cuba (Calle, #, entrecalles, municipio):</label>
+            <input
+              id="map-user-address-input"
+              type="text"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 text-xs font-semibold"
+              placeholder="Ej: Calle 23 #456 e/ L y M, El Vedado"
+            />
+            <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10">
+              <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F] mb-2">
+                Tarifas en Vivo hacia tu Punto GPS
+              </h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-[11px]">
+                  <thead>
+                    <tr class="border-b border-stone-300 dark:border-white/10 opacity-70">
+                      <th class="pb-1">Negocio</th>
+                      <th class="pb-1 px-1">Base</th>
+                      <th class="pb-1 px-1">$/Km</th>
+                      <th class="pb-1 px-1">Dist.</th>
+                      <th class="pb-1 text-right">EnvÃ­o</th>
+                    </tr>
+                  </thead>
+                  <tbody id="map-vendor-tariffs-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="saveCustomUserAddress()" class="w-full py-3 rounded-2xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-extrabold text-xs shadow-md transition-all">
+            Confirmar UbicaciÃ³n GPS y Actualizar Tarifas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. MODAL DE INICIO DE SESIÃ“N DE ADMINISTRADOR / NEGOCIO -->
+  <div id="admin-login-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">Acceso Empresarial RBAC</span>
+          <h3 class="font-display text-xl font-bold">Iniciar SesiÃ³n en Dashboard</h3>
+        </div>
+        <button onclick="closeAdminModals()" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">âœ•</button>
+      </div>
+      <form onsubmit="handleAdminLogin(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold block mb-1">Correo del Administrador / Negocio:</label>
+          <input id="admin-email-input" type="email" value="admin@mercapros.com" required class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Selecciona el Tipo de Cuenta para Probar sus Permisos:</label>
+          <select id="admin-role-login-select" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold">
+            <option value="v-mip-01">Mipyme: Alimentos Del Valle S.U.R.L. (Vende Mayorista y Minorista)</option>
+            <option value="v-tcp-01">TCP: Mercadito La VÃ­bora Express (Vende SOLO Minorista)</option>
+            <option value="v-exp-01">Exportador Extranjero: Iberia Cargo & Foods S.A. (Vende Contenedores)</option>
+            <option value="v-mip-02">Mipyme: ElectroHabana Solar S.R.L. (Vende Mayorista y Minorista)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-2xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-[#09100D] font-extrabold text-xs shadow-md">
+          Desbloquear Panel de Control MÃ³vil
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 11. DASHBOARD ADMINISTRADOR MÃ“VIL ("TIERRA QUERIDA" - 5 PESTAÃ‘AS OBLIGATORIAS + TARIFA $/KM) -->
+  <div id="admin-dashboard-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5">
+    <div class="bg-[#F6F1E7] dark:bg-[#09100D] border border-stone-300 dark:border-white/15 rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-y-auto shadow-2xl p-4 sm:p-6 space-y-4">
+      <!-- Cabecera del Dashboard con Conmutador en Vivo de Rol de Negocio -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-300 dark:border-white/10">
+        <div class="flex items-center gap-2.5">
+          <span class="w-10 h-10 rounded-2xl bg-[#7A5A1E] text-white flex items-center justify-center shadow">
+            <i class="fa-solid fa-sliders"></i>
+          </span>
+          <div>
+            <h3 class="font-display text-xl font-bold">Panel de Control de Negocios â€¢ Mercapros</h3>
+            <p class="text-xs opacity-75">Administra inventario, fotos comprimidas en el celular, ofertas y tarifa GPS por kilÃ³metro</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="admin-active-vendor-select" onchange="switchAdminVendorProfile(this.value)" class="px-3 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 text-xs font-bold">
+            <option value="v-mip-01">Mipyme: Alimentos Del Valle (Mayor/Menor)</option>
+            <option value="v-tcp-01">TCP: Mercadito La VÃ­bora (Solo Minorista)</option>
+            <option value="v-exp-01">Exportador: Iberia Cargo (Contenedores B2B)</option>
+            <option value="v-mip-02">Mipyme: ElectroHabana Solar (Mayor/Menor)</option>
+          </select>
+          <button onclick="closeAdminModals()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 font-bold">âœ•</button>
+        </div>
+      </div>
+
+      <!-- Estado de Permisos RBAC del Negocio Activo -->
+      <div id="admin-rbac-status-banner" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10"></div>
+
+      <!-- Las 5 PestaÃ±as Obligatorias -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <button data-tab="tab-catalog" onclick="switchAdminTab('tab-catalog')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-boxes-stacked"></i> 1. Inventario & Fotos
+        </button>
+        <button data-tab="tab-promos" onclick="switchAdminTab('tab-promos')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-bullhorn"></i> 2. Anuncios y Ofertas
+        </button>
+        <button data-tab="tab-categories" onclick="switchAdminTab('tab-categories')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-tags"></i> 3. Motor de CategorÃ­as
+        </button>
+        <button data-tab="tab-orders" onclick="switchAdminTab('tab-orders')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-truck-fast"></i> 4. Historial de Pedidos
+        </button>
+        <button data-tab="tab-settings" onclick="switchAdminTab('tab-settings')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-map-pin"></i> 5. Tarifa $/Km & Supabase
+        </button>
+      </div>
+
+      <!-- PESTAÃ‘A 1: CATÃLOGO CRUD + MOTOR HTML5 CANVAS -->
+      <div id="tab-catalog" class="js-admin-tab-panel grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <form id="admin-product-form" onsubmit="saveProductFromAdmin(event)" class="lg:col-span-5 p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3 text-xs">
+          <h4 class="font-display font-bold text-base">Publicar / Editar Producto</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="col-span-2">
+              <label class="font-bold block mb-1">Nombre del Producto o Combo:</label>
+              <input id="prod-title-input" type="text" required placeholder="Ej: Pechuga de Pollo Caja 15kg" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">SKU:</label>
+              <input id="prod-sku-input" type="text" placeholder="CAR-001" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">CategorÃ­a:</label>
+              <select id="prod-category-input" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold"></select>
+            </div>
+          </div>
+
+          <!-- Precios con Bloqueo AutomÃ¡tico RBAC si el usuario es TCP -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10">
+              <label class="font-bold block">Precio Minorista (USD):</label>
+              <input id="prod-retail-input" type="number" step="0.01" required placeholder="12.50" class="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
+              <input id="prod-unitretail-input" type="text" placeholder="Unidad (Ej: Paquete 5 lb)" class="w-full mt-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 text-[11px]" />
+            </div>
+
+            <div id="admin-wholesale-field-group" class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-600/20">
+              <div class="flex items-center justify-between">
+                <label class="font-bold">Precio Mayorista (USD):</label>
+              </div>
+              <input id="prod-wholesale-input" type="number" step="0.01" placeholder="85.00" class="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
+              <input id="prod-unitwholesale-input" type="text" placeholder="Ej: Caja Master 40 lb" class="w-full mt-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 text-[11px]" />
+              <span id="prod-wholesale-Note" class="text-[10px] font-bold text-[#7A5A1E] block mt-1">Habilitado para Mipyme</span>
+            </div>
+          </div>
+
+          <div id="admin-container-field-group" class="hidden p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-600/25">
+            <label class="font-bold block">Precio Contenedor 20'/40' CIF (USD):</label>
+            <input id="prod-container-input" type="number" step="1" placeholder="34500" class="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-stone-300 font-bold" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold block mb-1">MÃ­n. Mayorista:</label>
+              <input id="prod-minqty-input" type="number" value="5" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Stock Disponible:</label>
+              <input id="prod-stock-input" type="number" value="50" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold block mb-1">Especificaciones Cortas:</label>
+            <input id="prod-specs-input" type="text" placeholder="Ej: 100% Puro â€¢ Cadena de FrÃ­o â€¢ Entrega Hoy" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+          </div>
+
+          <div>
+            <label class="font-bold block mb-1">DescripciÃ³n:</label>
+            <textarea id="prod-desc-input" rows="2" placeholder="Detalles del producto..." class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15"></textarea>
+          </div>
+
+          <!-- Carga y CompresiÃ³n de Fotos desde el Celular (HTML5 Canvas Engine) -->
+          <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-dashed border-stone-300 dark:border-white/20 space-y-2">
+            <label class="font-bold block text-xs">
+              <i class="fa-solid fa-camera-retro text-[#7A5A1E] mr-1"></i>Subir Foto desde CÃ¡mara o GalerÃ­a (CompresiÃ³n Canvas):
+            </label>
+            <input type="file" accept="image/*" onchange="handleProductPhotoUpload(event)" class="w-full text-[11px]" />
+            <input id="prod-image-dataurl" type="hidden" value="assets/combo-proteina.jpg" />
+            <img id="prod-image-preview" src="" alt="Vista previa comprimida" class="hidden w-20 h-20 rounded-xl object-cover border" />
+            <span id="canvas-compression-badge" class="block text-[10px] font-mono opacity-75">Auto-optimizaciÃ³n HTML5 Canvas: mÃ¡x 800x800px (~45 KB WebP)</span>
+          </div>
+
+          <label class="flex items-center gap-2 font-bold cursor-pointer">
+            <input id="prod-flash-checkbox" type="checkbox" class="rounded text-[#7A5A1E]" />
+            <span>Destacar en Ofertas RelÃ¡mpago (-15%)</span>
+          </label>
+
+          <div class="flex gap-2 pt-1">
+            <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-[#09100D] font-extrabold">
+              Guardar en Inventario
+            </button>
+            <button type="button" onclick="resetProductForm()" class="px-3 py-2.5 rounded-xl bg-stone-200 dark:bg-white/10 font-bold">
+              Limpiar
+            </button>
+          </div>
+        </form>
+
+        <div class="lg:col-span-7 space-y-2.5">
+          <h4 class="font-display font-bold text-base">Inventario Activo del Negocio</h4>
+          <div id="admin-inventory-list" class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- PESTAÃ‘A 2: ANUNCIOS Y PROMOCIONES -->
+      <div id="tab-promos" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+        <form onsubmit="addAnnouncementFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+          <h4 class="font-display font-bold text-base">Crear Banner de Oferta o Aviso</h4>
+          <div>
+            <label class="font-bold block mb-1">TÃ­tulo de la PromociÃ³n:</label>
+            <input id="ann-title-input" type="text" required placeholder="Ej: Descuento 10% en Combos CÃ¡rnicos" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+          </div>
+          <div>
+            <label class="font-bold block mb-1">SubtÃ­tulo / CondiciÃ³n:</label>
+            <input id="ann-subtitle-input" type="text" required placeholder="VÃ¡lido para pedidos en La Habana hoy" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold block mb-1">Etiqueta:</label>
+              <input id="ann-badge-input" type="text" placeholder="OFERTA HOY" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">CÃ³digo CupÃ³n:</label>
+              <input id="ann-code-input" type="text" placeholder="CUBA10" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-extrabold">
+            Publicar Aviso en Cabecera
+          </button>
+        </form>
+        <div id="admin-announcements-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- PESTAÃ‘A 3: MOTOR DE CATEGORÃAS DINÃMICO -->
+      <div id="tab-categories" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+        <form onsubmit="addCategoryFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+          <h4 class="font-display font-bold text-base">Agregar Nueva CategorÃ­a al Mercado</h4>
+          <div>
+            <label class="font-bold block mb-1">Nombre del Departamento:</label>
+            <input id="cat-name-input" type="text" required placeholder="Ej: FerreterÃ­a y Materiales" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold block mb-1">Insignia Corta:</label>
+              <input id="cat-badge-input" type="text" placeholder="Nuevo" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Ãcono FontAwesome:</label>
+              <input id="cat-icon-input" type="text" value="fa-screwdriver-wrench" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-extrabold">
+            Actualizar MenÃº al Instante
+          </button>
+        </form>
+        <div id="admin-categories-list" class="space-y-2"></div>
+      </div>
+
+      <!-- PESTAÃ‘A 4: HISTORIAL DE PEDIDOS Y COTIZACIONES -->
+      <div id="tab-orders" class="js-admin-tab-panel hidden space-y-3">
+        <h4 class="font-display font-bold text-base">Registro de Pedidos B2C, Mayoristas y Contenedores B2B</h4>
+        <div id="admin-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- PESTAÃ‘A 5: CONFIGURACIÃ“N DE TARIFA POR KM (MIPYME/TCP), SUPABASE Y BACKUP JSON -->
+      <div id="tab-settings" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+        <!-- ConfiguraciÃ³n de Domicilio y Precio por Km del Negocio -->
+        <form onsubmit="saveVendorLogisticsConfig(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">LogÃ­stica GPS del Negocio</span>
+          <h4 class="font-display font-bold text-base">Configurar Precio por KilÃ³metro (Mipyme / TCP)</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold block mb-1">Tarifa Base Arranque (USD):</label>
+              <input id="vendor-cfg-basefee" type="number" step="0.05" required class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Precio por KilÃ³metro (USD/km):</label>
+              <input id="vendor-cfg-kmprice" type="number" step="0.05" required class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold text-emerald-700" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold block mb-1">Latitud GPS AlmacÃ©n:</label>
+              <input id="vendor-cfg-lat" type="number" step="0.0001" required class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-mono" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Longitud GPS AlmacÃ©n:</label>
+              <input id="vendor-cfg-lng" type="number" step="0.0001" required class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-mono" />
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#7A5A1E] text-white font-extrabold shadow">
+            Guardar Tarifa por Km y Coordenadas
+          </button>
+        </form>
+
+        <!-- Persistencia Dual-Layer Supabase + Copia de Seguridad JSON en 1 Clic -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-4">
+          <form onsubmit="saveSupabaseCredentials(event)" class="space-y-2.5">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">SincronizaciÃ³n en la Nube</span>
+            <h4 class="font-display font-bold text-base">ConexiÃ³n Dual-Layer con Supabase</h4>
+            <input id="supabase-url-input" type="url" placeholder="https://tu-proyecto.supabase.co" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            <input id="supabase-key-input" type="password" placeholder="Supabase Anon Public Key" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            <button type="submit" class="w-full py-2 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-bold">
+              Sincronizar con Supabase
+            </button>
+          </form>
+
+          <div class="pt-3 border-t border-stone-200 dark:border-white/10 space-y-2">
+            <h5 class="font-bold text-xs">Copia de Seguridad / RestauraciÃ³n en JSON en 1 Clic</h5>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="exportBackupJson()" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700 text-white font-bold">
+                <i class="fa-solid fa-download mr-1"></i>Descargar JSON
+              </button>
+              <label class="flex-1 py-2.5 px-3 rounded-xl bg-stone-200 dark:bg-white/10 font-bold text-center cursor-pointer">
+                <i class="fa-solid fa-upload mr-1"></i>Restaurar JSON
+                <input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. DRAWER LATERAL DEL CARRITO Y DESGLOSE DE DOMICILIO GPS -->
+  <div id="cart-drawer-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+    <div class="bg-[#FFFDF8] dark:bg-[#121D18] w-full max-w-md h-full p-5 flex flex-col justify-between shadow-2xl border-l border-stone-200 dark:border-white/10 overflow-y-auto">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-white/10">
+          <div>
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">Checkout Multinivel</span>
+            <h3 class="font-display text-xl font-bold">Tu Pedido & Ruta GPS</h3>
+          </div>
+          <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">âœ•</button>
+        </div>
+
+        <div id="cart-items-list" class="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1"></div>
+        <div id="cart-totals-summary"></div>
+      </div>
+
+      <div class="space-y-2.5 pt-4 border-t border-stone-200 dark:border-white/10 text-xs">
+        <input id="checkout-customer-name" type="text" placeholder="Nombre de quien recibe en Cuba o RazÃ³n Social Mipyme/TCP" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
+        <input id="checkout-customer-notes" type="text" placeholder="Referencia de entrega (Ej: Timbre 2, llamar antes)" class="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+        <button onclick="submitCheckoutOrder()" class="w-full py-3.5 rounded-2xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-extrabold text-xs shadow-lg transition-all">
+          Comprar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. MOBILE DRAWER (MENÃš DESLIZANTE ACCESIBLE AL PULGAR CON MODO CON/SIN FOTOS, MONEDA Y NIVELES) -->
+  <div id="mobile-drawer" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex">
+    <div class="bg-[#FFFDF8] dark:bg-[#121D18] w-80 max-w-[85vw] h-full p-5 flex flex-col justify-between shadow-2xl">
+      <div class="space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-white/10">
+          <span class="font-display font-extrabold text-lg">MERCAPROS CUBA</span>
+          <button onclick="document.getElementById('mobile-drawer').classList.add('hidden')" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">âœ•</button>
+        </div>
+
+        <!-- OpciÃ³n Principal Solicitada en el MenÃº: Ver Con Foto o Sin ImÃ¡genes -->
+        <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-600/25 space-y-2">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F] block">OptimizaciÃ³n para Conectividad de Cuba</span>
+          <button onclick="toggleLowDataMode(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-[#14201B] text-white font-bold text-xs flex items-center justify-center gap-2">
+            <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>VersiÃ³n Con Fotos</span>
+          </button>
+        </div>
+
+        <div class="space-y-1.5 text-xs font-bold">
+          <span class="text-[10px] uppercase opacity-60 block mb-1">Cambiar Nivel de Usuario</span>
+          <button onclick="setUserRole('EXPORTADOR_B2B'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
+            <i class="fa-solid fa-ship text-emerald-700 w-5"></i> 1. Exportador (Contenedores)
+          </button>
+          <button onclick="setUserRole('MIPYME'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
+            <i class="fa-solid fa-building-shield text-[#7A5A1E] w-5"></i> 2A. Mipyme (Mayor y Menor)
+          </button>
+          <button onclick="setUserRole('TCP'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
+            <i class="fa-solid fa-store text-teal-700 w-5"></i> 2B. TCP (Vende Minorista)
+          </button>
+          <button onclick="setUserRole('CLIENTE_B2C'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
+            <i class="fa-solid fa-house-user text-stone-600 w-5"></i> 3. Consumidor Hogar B2C
+          </button>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-stone-200 dark:border-white/10 text-xs">
+          <button onclick="openDeliveryMapModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-stone-200/70 dark:bg-white/10 font-bold text-left flex items-center gap-2">
+            <i class="fa-solid fa-map-location-dot text-[#7A5A1E]"></i> Mapa de Domicilio $/Km
+          </button>
+          <button onclick="openAdminModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-stone-200/70 dark:bg-white/10 font-bold text-left flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-[#7A5A1E]"></i> Dashboard de Negocios
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-stone-200 dark:border-white/10">
+        <span class="text-xs font-semibold opacity-75">Contacto Directo:</span>
+        <!-- Regla Estricta: BotÃ³n WhatsApp SOLO ÃCONO -->
+        <a href="https://wa.me/971508379080" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow">
+          <i class="fa-brands fa-whatsapp text-xl"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTÃ“N FLOTANTE DE WHATSAPP (REGLA ESTRICTA: ÃšNICAMENTE EL ÃCONO, CERO TEXTO) -->
+  <a
+    href="https://wa.me/971508379080"
+    target="_blank"
+    rel="noopener"
+    aria-label="WhatsApp"
+    class="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform"
+  >
+    <i class="fa-brands fa-whatsapp text-3xl"></i>
+  </a>
+
+  <!-- TOAST DE NOTIFICACIONES -->
+  <div id="mercapros-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] text-xs font-extrabold shadow-2xl border border-white/15 flex items-center gap-2.5 transition-all">
+    <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-900"></i>
+    <span id="mercapros-toast-text"></span>
+  </div>
+
+  <!-- 14. PIE DE PÃGINA CON FIRMA OBLIGATORIA "Developed by Tecnoemprende" -->
+  <footer class="mt-12 bg-[#14201B] text-[#F6F1E7] dark:bg-[#060B09] border-t border-white/10 py-10 px-4">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+      <div class="space-y-2.5">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-[#D9B76F] text-[#09100D] flex items-center justify-center font-display font-extrabold text-base">M</div>
+          <span class="font-display font-extrabold text-lg">MERCAPROS CUBA</span>
+        </div>
+        <p class="opacity-75 leading-relaxed">
+          Plataforma integral B2B y B2C para la cadena de suministro en Cuba: Exportadores de contenedores, Mipymes mayoristas/minoristas, TCP y entregas familiares a domicilio.
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold uppercase tracking-wider text-[#D9B76F]">Niveles del Ecosistema</h4>
+        <ul class="space-y-1.5 opacity-80">
+          <li><button onclick="setUserRole('EXPORTADOR_B2B')" class="hover:underline">1. Exportadores por Contenedor (CIF Mariel)</button></li>
+          <li><button onclick="setUserRole('MIPYME')" class="hover:underline">2A. Mipymes (Mayorista & Minorista)</button></li>
+          <li><button onclick="setUserRole('TCP')" class="hover:underline">2B. TCP (Compra Mayor/Menor â€¢ Venta Minorista)</button></li>
+          <li><button onclick="setUserRole('CLIENTE_B2C')" class="hover:underline">3. Mercado Familiar a Domicilio (B2C)</button></li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold uppercase tracking-wider text-[#D9B76F]">Conectividad & Herramientas</h4>
+        <ul class="space-y-1.5 opacity-80">
+          <li><button onclick="toggleLowDataMode()" class="hover:underline">Conmutador Con Foto / Sin ImÃ¡genes (Ultra-RÃ¡pido)</button></li>
+          <li><button onclick="openDeliveryMapModal()" class="hover:underline">Mapa GPS & Tarifa por KilÃ³metro</button></li>
+          <li><button onclick="openAdminModal()" class="hover:underline">Dashboard Administrable Mipyme / TCP</button></li>
+          <li><a href="sitemap.xml" target="_blank" class="hover:underline">Mapa del Sitio (SEO XML)</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="font-bold uppercase tracking-wider text-[#D9B76F]">AtenciÃ³n Directa</h4>
+        <p class="opacity-80">Soporte logÃ­stico para contenedores, altas de Mipymes/TCP y pedidos a domicilio en todas las provincias.</p>
+        <div class="flex items-center gap-3">
+          <!-- Regla Estricta: BotÃ³n WhatsApp en Footer SOLO ÃCONO -->
+          <a href="https://wa.me/971508379080" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow">
+            <i class="fa-brands fa-whatsapp text-xl"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-[11px] opacity-75">
+      <span>Â© 2026 Mercapros Cuba B2B & B2C Marketplace. Todos los derechos reservados.</span>
+      <span class="font-semibold tracking-wide text-[#D9B76F]">Developed by Tecnoemprende</span>
+    </div>
+  </footer>
+
+  <!-- Scripts de Datos y LÃ³gica -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

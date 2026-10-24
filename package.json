@@ -1,0 +1,16 @@
+{
+  "name": "mercapros-cuba-platform",
+  "version": "2.4.0",
+  "description": "Plataforma Híbrida B2B/B2C para el mercado de Cuba (Exportadores, Mipymes, TCP y Consumidor Final) inspirada en Careem Super-App & Supermarket 23",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
