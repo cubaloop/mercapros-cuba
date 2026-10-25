@@ -1,5 +1,5 @@
 // ============================================================================
-// MERCAPROS CUBA - CONTROLADOR INTERACTIVO SUPER-APP (CAREEM + SUPERMARKET 23)
+// MERCAPROS CUBA - CONTROLADOR PRINCIPAL (INTERFAZ LIMPIA + TICKET WHATSAPP)
 // ============================================================================
 
 let appState = loadMercaprosState();
@@ -8,95 +8,77 @@ let activeCategory = 'all';
 let activeSaleFilter = 'ALL'; // ALL | CONTAINER_B2B | WHOLESALE | RETAIL | FLASH
 let activeVendorFilter = 'ALL';
 let searchQuery = '';
-let maxPriceFilter = 40000;
 let currentSort = 'featured';
 let isAdminAuthenticated = false;
 let activeAdminTab = 'tab-catalog';
 let editingProductId = null;
 
-// Instancias de Mapas Leaflet (B2C/B2B General + Configurador de Negocio)
+// Instancias de Mapas Leaflet
 let deliveryMap = null;
 let userMarker = null;
 let vendorMarkers = [];
 let routePolyline = null;
 
-// Metadatos y Reglas de Permisos Estrictos por Nivel de Usuario (RBAC)
+// Número Oficial de WhatsApp de Recepción de Tickets de Compra
+const ADMIN_WHATSAPP_NUMBER = '971508379080';
+
+// Matriz de Permisos por Nivel de Usuario (RBAC)
 const ROLE_MATRIX = {
   ALL_VIEW: {
     code: 'ALL_VIEW',
-    label: 'Vista General (Todos los Niveles)',
-    shortLabel: 'Multinivel',
-    icon: 'fa-globe',
-    badgeClass: 'bg-amber-900/10 text-amber-900 border-amber-800/30',
+    label: 'Vista General',
     canBuyContainer: true,
     canBuyWholesale: true,
     canBuyRetail: true,
     canSellContainer: true,
     canSellWholesale: true,
-    canSellRetail: true,
-    description: 'Exploración completa del ecosistema B2B (Contenedores y Mayorista) y B2C (Minorista a Domicilio).'
+    canSellRetail: true
   },
   EXPORTADOR_B2B: {
     code: 'EXPORTADOR_B2B',
-    label: 'Nivel 1 • Exportador Extranjero (Contenedores)',
-    shortLabel: 'Exportador B2B',
-    icon: 'fa-ship',
-    badgeClass: 'bg-emerald-900/15 text-emerald-900 border-emerald-800/30',
+    label: 'Exportador (Contenedores)',
     canBuyContainer: true,
     canBuyWholesale: false,
     canBuyRetail: false,
     canSellContainer: true,
     canSellWholesale: false,
-    canSellRetail: false,
-    description: 'Empresas extranjeras autorizadas a exportar cargas por contenedores (20\' y 40\' Reefer/Dry) CIF Mariel / Habana.'
+    canSellRetail: false
   },
   MIPYME: {
     code: 'MIPYME',
-    label: 'Nivel 2A • Mipyme (Compra Contenedor/Mayor y Vende Mayor/Menor)',
-    shortLabel: 'Mipyme B2B/B2C',
-    icon: 'fa-building-shield',
-    badgeClass: 'bg-amber-800/15 text-amber-900 border-amber-700/30',
+    label: 'Mipyme (Mayor y Menor)',
     canBuyContainer: true,
     canBuyWholesale: true,
     canBuyRetail: true,
     canSellContainer: false,
     canSellWholesale: true,
-    canSellRetail: true,
-    description: 'Importa contenedores o compra lotes mayoristas. Habilitada para vender al por mayor (cajas/pallets) y al detalle.'
+    canSellRetail: true
   },
   TCP: {
     code: 'TCP',
-    label: 'Nivel 2B • TCP (Compra Mayor/Menor • Vende SOLO Minorista)',
-    shortLabel: 'TCP Cuenta Propia',
-    icon: 'fa-store',
-    badgeClass: 'bg-teal-900/15 text-teal-900 border-teal-700/30',
+    label: 'TCP (Vende Minorista)',
     canBuyContainer: false,
     canBuyWholesale: true,
     canBuyRetail: true,
     canSellContainer: false,
-    canSellWholesale: false, // REGLA ESTRICTA: TCP solo vende minorista
-    canSellRetail: true,
-    description: 'Trabajador por Cuenta Propia: Abastece su negocio comprando al por mayor o menor, y vende exclusivamente al detalle (minorista).'
+    canSellWholesale: false,
+    canSellRetail: true
   },
   CLIENTE_B2C: {
     code: 'CLIENTE_B2C',
-    label: 'Nivel 3 • Consumidor / Familia (Compra Minorista + Domicilio)',
-    shortLabel: 'Cliente Hogar B2C',
-    icon: 'fa-house-chimney-user',
-    badgeClass: 'bg-stone-800/10 text-stone-900 border-stone-700/25',
+    label: 'Cliente Hogar',
     canBuyContainer: false,
     canBuyWholesale: false,
     canBuyRetail: true,
     canSellContainer: false,
     canSellWholesale: false,
-    canSellRetail: false,
-    description: 'Compras familiares y combos con entrega rápida puerta a puerta en Cuba calculada por kilómetro.'
+    canSellRetail: false
   }
 };
 
-// Cálculo Haversine exacto con factor de tortuosidad vial urbana (1.28x para calles de La Habana/Cuba)
+// Cálculo Geodésico Haversine con factor urbano (1.28x)
 function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radio de la Tierra en km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a =
@@ -108,10 +90,12 @@ function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
   return Math.max(0.5, Number((straightKm * 1.28).toFixed(1)));
 }
 
-// Cálculo del costo de domicilio para un vendedor específico hacia la ubicación GPS del usuario
 function calculateVendorDelivery(vendor) {
-  if (!vendor || !appState.userGps) {
-    return { distanceKm: 2.0, feeUsd: 2.50 };
+  if (!vendor || vendor.role === 'EXPORTADOR_B2B') {
+    return { distanceKm: 0, feeUsd: 0, isCifPort: true };
+  }
+  if (!appState.userGps) {
+    return { distanceKm: 2.0, feeUsd: 2.50, isCifPort: false };
   }
   const distanceKm = calculateRoadDistanceKm(
     vendor.lat,
@@ -122,11 +106,11 @@ function calculateVendorDelivery(vendor) {
   const rawFee = Number(vendor.baseDeliveryFeeUsd || 1.5) + (distanceKm * Number(vendor.pricePerKmUsd || 0.5));
   return {
     distanceKm,
-    feeUsd: Number(rawFee.toFixed(2))
+    feeUsd: Number(rawFee.toFixed(2)),
+    isCifPort: false
   };
 }
 
-// Formateador de Moneda Multi-Divisa (USD / CUP / MLC)
 function formatMoney(amountUsd) {
   const val = Number(amountUsd || 0);
   const curr = appState.currency || 'USD';
@@ -141,31 +125,19 @@ function formatMoney(amountUsd) {
   return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 }
 
-// Inicialización al cargar el DOM
 document.addEventListener('DOMContentLoaded', () => {
   applyThemeAndConnectivity();
   populateProvinceAndMunicipalitySelectors();
   renderRoleBar();
-  renderAnnouncementsBanner();
-  renderSuperAppModules();
   renderCategoriesBar();
-  renderVendorPills();
+  renderStoresSection();
   renderCatalog();
   updateCartUI();
   updateGpsHeaderBadge();
 
-  // Sincronización en segundo plano con Supabase
-  syncFromSupabase(appState, (status) => {
-    const syncEl = document.getElementById('supabase-sync-indicator');
-    if (syncEl) {
-      syncEl.textContent = status.synced
-        ? `Supabase Cloud Activo (${status.count} ítems)`
-        : `Dual-Layer Local Instant-Boot (0ms)`;
-    }
-  });
+  syncFromSupabase(appState, () => {});
 });
 
-// Aplicar Tema Claro/Oscuro y Modo Con Foto / Sin Imágenes (Especial Conectividad Cuba)
 function applyThemeAndConnectivity() {
   const html = document.documentElement;
   if (appState.theme === 'dark') {
@@ -180,21 +152,11 @@ function applyThemeAndConnectivity() {
     document.body.classList.remove('low-data-mode');
   }
 
-  // Actualizar botones en barra superior y menú móvil
   const lowDataBtns = document.querySelectorAll('.js-lowdata-toggle-label');
   lowDataBtns.forEach(el => {
     el.innerHTML = appState.lowDataMode
-      ? '<i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i>Modo Sin Fotos (Ultra-Rápido)'
-      : '<i class="fa-regular fa-image mr-1.5"></i>Versión Con Fotos';
-  });
-
-  const lowDataBadges = document.querySelectorAll('.js-lowdata-pill');
-  lowDataBadges.forEach(el => {
-    if (appState.lowDataMode) {
-      el.classList.add('ring-2', 'ring-amber-500', 'bg-amber-500/20');
-    } else {
-      el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-500/20');
-    }
+      ? '<i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i>Modo Sin Fotos'
+      : '<i class="fa-regular fa-image mr-1.5"></i>Con Fotos';
   });
 
   const currSelects = document.querySelectorAll('.js-currency-select');
@@ -205,11 +167,12 @@ function toggleLowDataMode() {
   appState.lowDataMode = !appState.lowDataMode;
   saveMercaprosState(appState);
   applyThemeAndConnectivity();
+  renderStoresSection();
   renderCatalog();
   showToast(
     appState.lowDataMode
-      ? 'Modo Sin Imágenes activado: Carga instantánea optimizada para datos móviles en Cuba (<18 KB).'
-      : 'Modo Con Imágenes activado: Fotografías comprimidas de alta definición.'
+      ? 'Modo Sin Imágenes activado (carga ultraligera).'
+      : 'Modo Con Imágenes activado.'
   );
 }
 
@@ -222,179 +185,45 @@ function toggleThemeMode() {
 function changeCurrency(newCurr) {
   appState.currency = newCurr;
   saveMercaprosState(appState);
+  renderStoresSection();
   renderCatalog();
   updateCartUI();
-  renderVendorPills();
 }
 
 // ============================================================================
-// SELECTOR DE NIVEL DE USUARIO (EXPORTADOR / MIPYME / TCP / CLIENTE B2C)
+// SELECTOR LIMPIO DE NIVEL DE USUARIO (SIN CARTELES GIGANTES)
 // ============================================================================
 function setUserRole(roleCode) {
   if (!ROLE_MATRIX[roleCode]) return;
   appState.currentRole = roleCode;
 
-  // Ajustar negocio activo de demostración cuando cambia el rol para que el Dashboard refleje permisos reales
-  if (roleCode === 'EXPORTADOR_B2B') appState.activeVendorId = 'v-exp-01';
+  if (roleCode === 'EXPORTADOR_B2B') appState.activeVendorId = 'v-wssnd-01';
   if (roleCode === 'MIPYME') appState.activeVendorId = 'v-mip-01';
   if (roleCode === 'TCP') appState.activeVendorId = 'v-tcp-01';
 
   saveMercaprosState(appState);
   renderRoleBar();
-  renderSuperAppModules();
   renderCategoriesBar();
   renderCatalog();
   if (isAdminAuthenticated) {
     renderAdminDashboard();
   }
-  showToast(`Vista cambiada a: ${ROLE_MATRIX[roleCode].label}`);
+  showToast(`Modo: ${ROLE_MATRIX[roleCode].label}`);
 }
 
 function renderRoleBar() {
-  const roleInfo = ROLE_MATRIX[appState.currentRole] || ROLE_MATRIX.ALL_VIEW;
-  const bannerEl = document.getElementById('active-role-explainer');
-  if (bannerEl) {
-    bannerEl.innerHTML = `
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <span class="w-9 h-9 rounded-xl bg-[#7A5A1E] text-white flex items-center justify-center shadow-sm">
-            <i class="fa-solid ${roleInfo.icon}"></i>
-          </span>
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-bold text-sm tracking-tight">${roleInfo.label}</span>
-              <span class="text-[11px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-semibold border ${roleInfo.badgeClass}">
-                Permisos RBAC Activos
-              </span>
-            </div>
-            <p class="text-xs opacity-80 mt-0.5">${roleInfo.description}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 text-xs font-medium">
-          <span class="px-2.5 py-1 rounded-lg ${roleInfo.canBuyContainer ? 'bg-emerald-600/15 text-emerald-800 dark:text-emerald-300' : 'bg-stone-500/10 opacity-45 line-through'}">
-            <i class="fa-solid fa-ship mr-1"></i>Compra Contenedor
-          </span>
-          <span class="px-2.5 py-1 rounded-lg ${roleInfo.canBuyWholesale ? 'bg-emerald-600/15 text-emerald-800 dark:text-emerald-300' : 'bg-stone-500/10 opacity-45 line-through'}">
-            <i class="fa-solid fa-boxes-stacked mr-1"></i>Compra Mayorista
-          </span>
-          <span class="px-2.5 py-1 rounded-lg ${roleInfo.canSellWholesale ? 'bg-amber-600/15 text-amber-900 dark:text-amber-300' : 'bg-stone-500/10 opacity-45 line-through'}">
-            <i class="fa-solid fa-warehouse mr-1"></i>Vende Mayorista
-          </span>
-          <span class="px-2.5 py-1 rounded-lg ${roleInfo.canSellRetail ? 'bg-teal-600/15 text-teal-900 dark:text-teal-300' : 'bg-stone-500/10 opacity-45 line-through'}">
-            <i class="fa-solid fa-bag-shopping mr-1"></i>Vende Minorista
-          </span>
-        </div>
-      </div>
-    `;
-  }
-
   document.querySelectorAll('.js-role-btn').forEach(btn => {
     const code = btn.getAttribute('data-role');
     if (code === appState.currentRole) {
-      btn.className = 'js-role-btn px-3.5 py-2 rounded-full text-xs font-bold transition-all bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-1.5';
+      btn.className = 'js-role-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-1.5';
     } else {
-      btn.className = 'js-role-btn px-3.5 py-2 rounded-full text-xs font-semibold transition-all bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-stone-300/70 dark:border-white/10 flex items-center gap-1.5';
+      btn.className = 'js-role-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-stone-300/70 dark:border-white/10 flex items-center gap-1.5';
     }
   });
 }
 
 // ============================================================================
-// SUPER-APP BENTO MODULES (INSPIRADO EN CAREEM / CREEME + OFERTAS CUBA)
-// ============================================================================
-function renderSuperAppModules() {
-  const container = document.getElementById('superapp-modules-grid');
-  if (!container) return;
-
-  const cards = [
-    {
-      id: 'mod-containers',
-      title: 'Puerto & Contenedores',
-      subtitle: 'Exportadores -> Mipymes (20\'/40\' CIF Mariel)',
-      badge: 'Nivel 1 B2B',
-      icon: 'fa-ship',
-      accent: 'from-emerald-900 to-teal-950 text-amber-100',
-      action: () => { setSaleModeFilter('CONTAINER_B2B'); }
-    },
-    {
-      id: 'mod-wholesale',
-      title: 'Abasto Mayorista',
-      subtitle: 'Mipymes -> TCP y Negocios (Cajas y Sacos)',
-      badge: 'Nivel 2 B2B',
-      icon: 'fa-boxes-stacked',
-      accent: 'from-amber-900 to-stone-900 text-amber-50',
-      action: () => { setSaleModeFilter('WHOLESALE'); }
-    },
-    {
-      id: 'mod-retail',
-      title: 'Súper & Combos Hogar',
-      subtitle: 'Mipymes y TCP -> Familias en Cuba (Al Detalle)',
-      badge: 'B2C Domicilio',
-      icon: 'fa-basket-shopping',
-      accent: 'from-stone-800 to-stone-950 text-stone-100',
-      action: () => { setSaleModeFilter('RETAIL'); }
-    },
-    {
-      id: 'mod-gps',
-      title: 'Rastreo & Tarifa x Km',
-      subtitle: `Entrega en ${appState.selectedMunicipality.split('(')[0]}`,
-      badge: 'Mapa En Vivo',
-      icon: 'fa-map-location-dot',
-      accent: 'from-[#7A5A1E] to-[#4A3510] text-white',
-      action: () => { openDeliveryMapModal(); }
-    }
-  ];
-
-  container.innerHTML = cards.map((c, idx) => `
-    <button onclick="triggerSuperAppModule(${idx})" class="text-left group relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br ${c.accent} shadow-md hover:shadow-xl transition-all border border-white/15 flex flex-col justify-between min-h-[138px]">
-      <div class="flex items-center justify-between w-full">
-        <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm">
-          ${c.badge}
-        </span>
-        <span class="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-          <i class="fa-solid ${c.icon}"></i>
-        </span>
-      </div>
-      <div class="mt-4">
-        <h3 class="font-display text-lg font-bold leading-snug">${c.title}</h3>
-        <p class="text-xs opacity-85 mt-0.5 flex items-center justify-between">
-          <span>${c.subtitle}</span>
-          <i class="fa-solid fa-arrow-right text-[11px] group-hover:translate-x-1 transition-transform"></i>
-        </p>
-      </div>
-    </button>
-  `).join('');
-}
-
-function triggerSuperAppModule(index) {
-  if (index === 0) setSaleModeFilter('CONTAINER_B2B');
-  if (index === 1) setSaleModeFilter('WHOLESALE');
-  if (index === 2) setSaleModeFilter('RETAIL');
-  if (index === 3) openDeliveryMapModal();
-}
-
-// ============================================================================
-// ANUNCIOS Y MARQUESINA DE OFERTAS
-// ============================================================================
-function renderAnnouncementsBanner() {
-  const bar = document.getElementById('top-announcements-bar');
-  if (!bar) return;
-  const activeAnns = (appState.announcements || []).filter(a => a.active);
-  if (activeAnns.length === 0) {
-    bar.innerHTML = '';
-    return;
-  }
-  bar.innerHTML = activeAnns.map(a => `
-    <div class="flex items-center gap-2 text-xs">
-      <span class="px-2 py-0.5 rounded-full bg-[#D9B76F] text-[#14201B] font-extrabold text-[10px] tracking-wider uppercase">${a.badge}</span>
-      <span class="font-semibold">${a.title}:</span>
-      <span class="opacity-85 hidden md:inline">${a.subtitle}</span>
-      ${a.code ? `<span class="px-2 py-0.5 rounded bg-white/15 font-mono text-[11px] border border-white/20">${a.code}</span>` : ''}
-    </div>
-  `).join('<span class="mx-4 opacity-40">•</span>');
-}
-
-// ============================================================================
-// CATEGORÍAS (INSPIRADAS EN SUPERMARKET 23) + FILTROS DE OFERTAS
+// CATEGORÍAS (CON "TIENDAS" DESTACADA Y SIN PÍLDORAS DE RELLENO)
 // ============================================================================
 function renderCategoriesBar() {
   const bar = document.getElementById('categories-scroll-bar');
@@ -403,14 +232,13 @@ function renderCategoriesBar() {
   bar.innerHTML = appState.categories.map(cat => {
     const isActive = activeCategory === cat.id;
     return `
-      <button onclick="selectCategory('${cat.id}')" class="shrink-0 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2.5 border ${
+      <button onclick="selectCategory('${cat.id}')" class="shrink-0 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border ${
         isActive
-          ? 'bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] border-transparent shadow-md'
+          ? 'bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] border-transparent shadow-sm'
           : 'bg-[#FFFDF8] dark:bg-[#121D18] hover:border-[#7A5A1E] border-stone-200 dark:border-white/10'
       }">
         <i class="fa-solid ${cat.icon} ${isActive ? 'text-[#D9B76F] dark:text-[#09100D]' : 'text-[#7A5A1E] dark:text-[#D9B76F]'}"></i>
         <span>${cat.name}</span>
-        <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white dark:bg-black/20 dark:text-black' : 'bg-stone-200/70 dark:bg-white/10 opacity-75'}">${cat.badge}</span>
       </button>
     `;
   }).join('');
@@ -418,7 +246,11 @@ function renderCategoriesBar() {
 
 function selectCategory(catId) {
   activeCategory = catId;
+  if (catId === 'contenedores-b2b') {
+    activeSaleFilter = 'ALL';
+  }
   renderCategoriesBar();
+  renderStoresSection();
   renderCatalog();
 }
 
@@ -446,57 +278,78 @@ function handleSortChange(val) {
 }
 
 // ============================================================================
-// TARJETAS DE NEGOCIOS VERIFICADOS (MIPYMES / TCP / EXPORTADORES) + TARIFA KM
+// SECCIÓN "TIENDAS" (WSSND SKYLINK COMO PRIMERA TIENDA OFICIAL)
 // ============================================================================
-function renderVendorPills() {
+function renderStoresSection() {
+  const storesWrapper = document.getElementById('stores-showcase-section');
   const container = document.getElementById('vendors-showcase-grid');
-  if (!container) return;
+  if (!container || !storesWrapper) return;
 
-  container.innerHTML = appState.vendors.map(v => {
+  // Destacar sección Tiendas especialmente cuando se elige la categoría "tiendas" o vista general
+  if (activeCategory === 'tiendas') {
+    storesWrapper.classList.remove('hidden');
+  } else {
+    storesWrapper.classList.remove('hidden');
+  }
+
+  container.innerHTML = appState.vendors.map((v, index) => {
     const deliv = calculateVendorDelivery(v);
     const isSelected = activeVendorFilter === v.id;
-    const roleBadgeColor =
-      v.role === 'EXPORTADOR_B2B'
-        ? 'bg-emerald-900/15 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200'
-        : v.role === 'MIPYME'
-        ? 'bg-amber-900/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200'
-        : 'bg-teal-900/15 text-teal-900 dark:bg-teal-500/20 dark:text-teal-200';
+    const isWssnd = v.id === 'v-wssnd-01';
+    const prodCount = appState.products.filter(p => p.vendorId === v.id).length;
 
     return `
-      <div class="rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border ${isSelected ? 'border-[#7A5A1E] ring-2 ring-[#7A5A1E]/30' : 'border-stone-200/80 dark:border-white/10'} shadow-sm flex flex-col justify-between transition-all">
+      <div class="rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border ${
+        isSelected
+          ? 'border-[#7A5A1E] ring-2 ring-[#7A5A1E]/30'
+          : isWssnd
+          ? 'border-[#7A5A1E]/60 dark:border-[#D9B76F]/40'
+          : 'border-stone-200/80 dark:border-white/10'
+      } shadow-sm flex flex-col justify-between transition-all">
         <div>
-          <div class="flex items-start justify-between gap-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${roleBadgeColor}">
-              ${v.badge}
-            </span>
-            <a href="https://wa.me/${v.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm transition-transform hover:scale-105">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              ${!appState.lowDataMode ? `
+                <img src="${v.logo || 'assets/wssnd-skylink-logo.jpg'}" alt="${v.name}" class="w-12 h-12 rounded-2xl object-cover border border-stone-200 dark:border-white/15 bg-white shrink-0" />
+              ` : `
+                <div class="w-10 h-10 rounded-2xl bg-[#7A5A1E]/15 text-[#7A5A1E] dark:text-[#D9B76F] flex items-center justify-center font-extrabold text-sm shrink-0">
+                  ${index + 1}
+                </div>
+              `}
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-display font-bold text-base truncate">${v.name}</h4>
+                  <i class="fa-solid fa-circle-check text-[#7A5A1E] dark:text-[#D9B76F] text-xs shrink-0" title="Tienda Verificada"></i>
+                </div>
+                <span class="text-[11px] font-semibold text-[#7A5A1E] dark:text-[#D9B76F] block">${v.badge} • ${prodCount} ofertas</span>
+              </div>
+            </div>
+            <a href="https://wa.me/${v.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm shrink-0">
               <i class="fa-brands fa-whatsapp text-base"></i>
             </a>
           </div>
-          <h4 class="font-display font-bold text-base mt-2 flex items-center gap-1.5">
-            <span>${v.name}</span>
-            <i class="fa-solid fa-circle-check text-[#7A5A1E] dark:text-[#D9B76F] text-xs" title="Negocio Verificado"></i>
-          </h4>
-          <p class="text-xs opacity-75 mt-1 line-clamp-2">${v.description}</p>
+          <p class="text-xs opacity-75 mt-2.5 line-clamp-2">${v.description}</p>
         </div>
 
-        <div class="mt-3 pt-3 border-t border-stone-200/70 dark:border-white/10 flex flex-col gap-2 text-xs">
-          <div class="flex items-center justify-between">
-            <span class="opacity-75"><i class="fa-solid fa-route mr-1 text-[#7A5A1E] dark:text-[#D9B76F]"></i>Distancia a ti:</span>
-            <span class="font-bold">${deliv.distanceKm} km</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="opacity-75"><i class="fa-solid fa-truck-fast mr-1 text-[#7A5A1E] dark:text-[#D9B76F]"></i>Tarifa Domicilio:</span>
-            <span class="font-bold text-emerald-800 dark:text-emerald-300">${formatMoney(deliv.feeUsd)} <span class="text-[10px] opacity-75">(${formatMoney(v.pricePerKmUsd)}/km)</span></span>
-          </div>
-          <div class="flex items-center justify-between pt-1">
-            <a href="${v.gmapsUrl}" target="_blank" rel="noopener" class="text-[11px] font-semibold underline hover:text-[#7A5A1E] flex items-center gap-1">
-              <i class="fa-solid fa-star text-amber-500"></i> ${v.rating} (${v.reviewsCount} reseñas Google Maps)
+        <div class="mt-3 pt-3 border-t border-stone-200/70 dark:border-white/10 flex items-center justify-between gap-2 text-xs">
+          <div class="text-[11px]">
+            ${deliv.isCifPort ? `
+              <span class="font-bold text-emerald-800 dark:text-emerald-300"><i class="fa-solid fa-ship mr-1"></i>CIF Puerto Mariel</span>
+            ` : `
+              <span class="font-bold">${deliv.distanceKm} km • ${formatMoney(deliv.feeUsd)}</span>
+            `}
+            <a href="${v.gmapsUrl}" target="_blank" rel="noopener" class="block text-[10px] opacity-70 hover:underline mt-0.5">
+              <i class="fa-solid fa-star text-amber-500"></i> ${v.rating} (${v.reviewsCount})
             </a>
-            <button onclick="filterByVendor('${v.id}')" class="text-[11px] font-bold px-2.5 py-1 rounded-lg ${isSelected ? 'bg-[#14201B] text-white dark:bg-[#D9B76F] dark:text-black' : 'bg-stone-200/70 dark:bg-white/10'}">
-              ${isSelected ? 'Viendo Todo' : 'Ver Inventario'}
-            </button>
           </div>
+
+          <button onclick="filterByVendor('${v.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+            isSelected
+              ? 'bg-[#14201B] text-white dark:bg-[#D9B76F] dark:text-black'
+              : 'bg-[#7A5A1E] hover:bg-[#5e4415] text-white'
+          }">
+            ${isSelected ? 'Mostrando Tienda' : 'Ver Catálogo'}
+          </button>
         </div>
       </div>
     `;
@@ -504,35 +357,77 @@ function renderVendorPills() {
 }
 
 function filterByVendor(vendorId) {
-  activeVendorFilter = activeVendorFilter === vendorId ? 'ALL' : vendorId;
-  renderVendorPills();
+  if (activeVendorFilter === vendorId) {
+    activeVendorFilter = 'ALL';
+  } else {
+    activeVendorFilter = vendorId;
+  }
+  renderStoresSection();
   renderCatalog();
+  const catGrid = document.getElementById('catalog-section-anchor');
+  if (catGrid && activeVendorFilter !== 'ALL') {
+    catGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // ============================================================================
-// RENDERIZADO DEL CATÁLOGO CON PERMISOS RBAC + MODO CON/SIN IMÁGENES
+// CATÁLOGO DE PRODUCTOS (DISEÑO LIMPIO SIN ETIQUETAS INNECESARIAS)
 // ============================================================================
 function renderCatalog() {
   const grid = document.getElementById('catalog-products-grid');
   const countEl = document.getElementById('catalog-results-count');
+  const activeStoreBanner = document.getElementById('active-store-filter-indicator');
   if (!grid) return;
 
   const role = ROLE_MATRIX[appState.currentRole] || ROLE_MATRIX.ALL_VIEW;
 
+  // Si el usuario seleccionó la categoría "tiendas" y no ha filtrado una tienda específica, mostrar primero WSSND SKYLINK
+  let effectiveVendorFilter = activeVendorFilter;
+  if (activeCategory === 'tiendas' && activeVendorFilter === 'ALL') {
+    effectiveVendorFilter = 'v-wssnd-01';
+  }
+
+  if (activeStoreBanner) {
+    if (effectiveVendorFilter !== 'ALL') {
+      const vObj = appState.vendors.find(v => v.id === effectiveVendorFilter);
+      activeStoreBanner.classList.remove('hidden');
+      activeStoreBanner.innerHTML = `
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-[#7A5A1E]/40 text-xs">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-store text-[#7A5A1E] dark:text-[#D9B76F]"></i>
+            <span>Tienda seleccionada: <strong>${vObj ? vObj.name : ''}</strong></span>
+          </div>
+          <button onclick="activeVendorFilter='ALL'; selectCategory('all');" class="font-bold text-[#7A5A1E] dark:text-[#D9B76F] hover:underline">
+            Ver todas las tiendas
+          </button>
+        </div>
+      `;
+    } else {
+      activeStoreBanner.classList.add('hidden');
+      activeStoreBanner.innerHTML = '';
+    }
+  }
+
   let filtered = appState.products.filter(p => {
     // Filtro por Categoría
-    if (activeCategory !== 'all' && p.category !== activeCategory) return false;
+    if (activeCategory !== 'all' && activeCategory !== 'tiendas') {
+      if (activeCategory === 'contenedores-b2b') {
+        if (!p.isContainerOffer && !p.saleModes.includes('CONTAINER_B2B')) return false;
+      } else if (p.category !== activeCategory) {
+        return false;
+      }
+    }
 
-    // Filtro por Vendedor
-    if (activeVendorFilter !== 'ALL' && p.vendorId !== activeVendorFilter) return false;
+    // Filtro por Tienda / Vendedor
+    if (effectiveVendorFilter !== 'ALL' && p.vendorId !== effectiveVendorFilter) return false;
 
-    // Filtro por Modo de Venta / Oferta Relámpago
+    // Filtro por Modalidad
     if (activeSaleFilter === 'CONTAINER_B2B' && !p.saleModes.includes('CONTAINER_B2B')) return false;
     if (activeSaleFilter === 'WHOLESALE' && !p.saleModes.includes('WHOLESALE')) return false;
     if (activeSaleFilter === 'RETAIL' && !p.saleModes.includes('RETAIL')) return false;
     if (activeSaleFilter === 'FLASH' && !p.isFlashOffer) return false;
 
-    // Filtro por Búsqueda
+    // Búsqueda
     if (searchQuery) {
       const haystack = `${p.title} ${p.sku} ${p.vendorName} ${p.specs} ${p.description}`.toLowerCase();
       if (!haystack.includes(searchQuery)) return false;
@@ -541,27 +436,22 @@ function renderCatalog() {
     return true;
   });
 
-  // Ordenamiento
   if (currentSort === 'price-asc') {
-    filtered.sort((a, b) => (a.priceRetailUsd || a.priceWholesaleUsd) - (b.priceRetailUsd || b.priceWholesaleUsd));
+    filtered.sort((a, b) => (a.priceContainerUsd || a.priceRetailUsd) - (b.priceContainerUsd || b.priceRetailUsd));
   } else if (currentSort === 'price-desc') {
-    filtered.sort((a, b) => (b.priceRetailUsd || b.priceWholesaleUsd) - (a.priceRetailUsd || a.priceWholesaleUsd));
-  } else if (currentSort === 'discount') {
-    filtered.sort((a, b) => (b.discountPct || 0) - (a.discountPct || 0));
+    filtered.sort((a, b) => (b.priceContainerUsd || b.priceRetailUsd) - (a.priceContainerUsd || a.priceRetailUsd));
   }
 
   if (countEl) {
-    countEl.textContent = `${filtered.length} producto${filtered.length === 1 ? '' : 's'} disponible${filtered.length === 1 ? '' : 's'}`;
+    countEl.textContent = `${filtered.length} producto${filtered.length === 1 ? '' : 's'}`;
   }
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div class="col-span-full rounded-3xl p-10 text-center bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10">
-        <i class="fa-solid fa-box-open text-3xl text-[#7A5A1E] mb-3"></i>
-        <h3 class="font-display text-xl font-bold">No se encontraron productos con estos filtros</h3>
-        <p class="text-xs opacity-75 mt-1">Prueba cambiando la categoría o seleccionando "Todos los Productos".</p>
-        <button onclick="selectCategory('all'); setSaleModeFilter('ALL'); activeVendorFilter='ALL'; renderVendorPills(); renderCatalog();" class="mt-4 px-5 py-2.5 rounded-full bg-[#14201B] text-white text-xs font-bold">
-          Restablecer Filtros
+      <div class="col-span-full rounded-3xl p-8 text-center bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10">
+        <p class="font-display text-base font-bold">No hay productos que coincidan con tu filtro</p>
+        <button onclick="activeVendorFilter='ALL'; selectCategory('all'); setSaleModeFilter('ALL');" class="mt-3 px-4 py-2 rounded-xl bg-[#14201B] text-white text-xs font-bold">
+          Ver Todo el Catálogo
         </button>
       </div>
     `;
@@ -576,55 +466,36 @@ function renderCatalog() {
     const hasWholesale = p.saleModes.includes('WHOLESALE');
     const hasRetail = p.saleModes.includes('RETAIL');
 
-    // Validar permisos de compra según el nivel activo del usuario
     const canBuyThisContainer = isContainerItem && role.canBuyContainer;
     const canBuyThisWholesale = hasWholesale && role.canBuyWholesale;
     const canBuyThisRetail = hasRetail && role.canBuyRetail;
 
-    // Bloque visual o de texto ultraligero (según Modo Con Foto o Sin Imágenes)
     const mediaHtml = appState.lowDataMode
       ? `
-        <div class="p-3.5 rounded-2xl bg-stone-100 dark:bg-white/5 border border-dashed border-stone-300 dark:border-white/15 flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <span class="w-9 h-9 rounded-xl bg-[#7A5A1E]/15 text-[#7A5A1E] dark:text-[#D9B76F] flex items-center justify-center font-bold text-sm">
-              <i class="fa-solid ${isContainerItem ? 'fa-ship' : 'fa-box-archive'}"></i>
-            </span>
-            <div>
-              <span class="text-[11px] font-mono font-bold uppercase opacity-75">SKU: ${p.sku}</span>
-              <p class="text-xs font-semibold text-emerald-800 dark:text-emerald-300">${p.incoterm} • Stock: ${p.stock}</p>
-            </div>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200">
-            0 KB Foto
-          </span>
+        <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between text-xs">
+          <span class="font-mono font-bold text-[#7A5A1E] dark:text-[#D9B76F]">${p.sku}</span>
+          <span class="font-semibold opacity-75">${p.incoterm}</span>
         </div>
       `
       : `
         <div class="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-stone-200 dark:bg-stone-900">
           <img src="${p.image}" alt="${p.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-            ${p.isFlashOffer ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-600 text-white shadow">-${p.discountPct}% Oferta</span>` : ''}
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#14201B]/85 text-[#F6F1E7] backdrop-blur-sm">
-              ${isContainerItem ? 'Contenedor B2B' : p.vendorRole === 'TCP' ? 'TCP Solo Minorista' : 'Mipyme Mayor/Menor'}
-            </span>
-          </div>
-          <a href="https://wa.me/${vendor.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg">
-            <i class="fa-brands fa-whatsapp text-lg"></i>
+          <a href="https://wa.me/${vendor.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-md">
+            <i class="fa-brands fa-whatsapp text-base"></i>
           </a>
         </div>
       `;
 
-    // Precios desglosados según modalidad
     let pricingBlock = '';
     if (isContainerItem) {
       pricingBlock = `
-        <div class="p-3 rounded-2xl bg-emerald-950/5 dark:bg-emerald-500/10 border border-emerald-800/20">
-          <div class="flex items-baseline justify-between">
-            <span class="text-[11px] font-bold uppercase text-emerald-900 dark:text-emerald-300">Precio Contenedor CIF</span>
-            <span class="text-xs line-through opacity-60">${formatMoney(p.oldPriceUsd)}</span>
+        <div class="p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="font-bold text-[#7A5A1E] dark:text-[#D9B76F]">Total Contenedor CIF Mariel</span>
+            <span class="font-bold opacity-80">${p.unitPriceLabel || ''}</span>
           </div>
-          <div class="text-xl font-extrabold tracking-tight mt-0.5">${formatMoney(p.priceContainerUsd)}</div>
-          <div class="text-[11px] opacity-75 mt-0.5">${p.unitRetail}</div>
+          <div class="text-lg font-extrabold tracking-tight mt-0.5">${formatMoney(p.priceContainerUsd)}</div>
+          <div class="text-[11px] opacity-75 mt-0.5 truncate" title="${p.unitRetail}">${p.unitRetail}</div>
         </div>
       `;
     } else {
@@ -632,35 +503,30 @@ function renderCatalog() {
         <div class="grid ${hasWholesale ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
           ${hasRetail ? `
             <div class="p-2.5 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
-              <span class="text-[10px] font-bold uppercase opacity-70 block">Minorista (Detalle)</span>
-              <span class="text-base font-extrabold text-[#14201B] dark:text-[#F2EDE0]">${formatMoney(p.priceRetailUsd)}</span>
-              <span class="text-[10px] opacity-75 block truncate" title="${p.unitRetail}">${p.unitRetail}</span>
+              <span class="text-[10px] font-bold uppercase opacity-70 block">Minorista</span>
+              <span class="text-base font-extrabold">${formatMoney(p.priceRetailUsd)}</span>
+              <span class="text-[10px] opacity-75 block truncate">${p.unitRetail}</span>
             </div>
           ` : ''}
           ${hasWholesale ? `
-            <div class="p-2.5 rounded-2xl bg-amber-900/10 dark:bg-amber-500/10 border border-amber-800/25">
-              <span class="text-[10px] font-bold uppercase text-amber-900 dark:text-amber-300 block">Mayorista (Mín. ${p.minWholesaleQty})</span>
-              <span class="text-base font-extrabold text-amber-950 dark:text-amber-200">${formatMoney(p.priceWholesaleUsd)}</span>
-              <span class="text-[10px] opacity-80 block truncate" title="${p.unitWholesale}">${p.unitWholesale}</span>
+            <div class="p-2.5 rounded-2xl bg-amber-900/10 dark:bg-amber-500/10 border border-amber-800/20">
+              <span class="text-[10px] font-bold uppercase text-amber-900 dark:text-amber-300 block">Mayorista (${p.minWholesaleQty}+)</span>
+              <span class="text-base font-extrabold">${formatMoney(p.priceWholesaleUsd)}</span>
+              <span class="text-[10px] opacity-75 block truncate">${p.unitWholesale}</span>
             </div>
-          ` : `
-            <div class="px-2.5 py-1.5 rounded-xl bg-teal-900/10 text-teal-900 dark:text-teal-300 text-[11px] font-semibold flex items-center gap-1.5">
-              <i class="fa-solid fa-shield-halved"></i> TCP: Autorizado exclusivamente para venta minorista al detalle
-            </div>
-          `}
+          ` : ''}
         </div>
       `;
     }
 
-    // Botones de Acción Sobrios ("Comprar" respetando la regla y el modo de compra permitido por nivel)
     let actionButtons = '';
     if (isContainerItem) {
       actionButtons = canBuyThisContainer
-        ? `<button onclick="addToCart('${p.id}', 'CONTAINER_B2B')" class="w-full py-2.5 px-4 rounded-xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-bold text-xs transition-all shadow-sm">
+        ? `<button onclick="addToCart('${p.id}', 'CONTAINER_B2B')" class="w-full py-2.5 px-4 rounded-xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-bold text-xs transition-all">
             Comprar
           </button>`
         : `<button disabled class="w-full py-2.5 px-4 rounded-xl bg-stone-300 dark:bg-white/10 text-stone-600 dark:text-stone-400 font-semibold text-xs cursor-not-allowed">
-            Requiere Nivel Mipyme / Importador
+            Solo Mipyme / Importador
           </button>`;
     } else {
       const retailBtn = canBuyThisRetail
@@ -669,7 +535,7 @@ function renderCatalog() {
           </button>`
         : '';
       const wholesaleBtn = (hasWholesale && canBuyThisWholesale)
-        ? `<button onclick="addToCart('${p.id}', 'WHOLESALE')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#7A5A1E] hover:bg-amber-800 text-white font-bold text-xs transition-all" title="Compra Mayorista (${p.unitWholesale})">
+        ? `<button onclick="addToCart('${p.id}', 'WHOLESALE')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#7A5A1E] hover:bg-amber-800 text-white font-bold text-xs transition-all">
             Comprar (${p.minWholesaleQty}+)
           </button>`
         : '';
@@ -677,23 +543,22 @@ function renderCatalog() {
     }
 
     return `
-      <article class="group rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200/90 dark:border-white/10 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-3">
-        <div class="space-y-3">
+      <article class="group rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200/90 dark:border-white/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between gap-3">
+        <div class="space-y-2.5">
           ${mediaHtml}
           <div>
             <div class="flex items-center justify-between text-[11px] opacity-75">
-              <span class="font-semibold truncate">${p.vendorName}</span>
-              <span class="shrink-0 font-bold text-emerald-800 dark:text-emerald-300">
-                <i class="fa-solid fa-location-arrow mr-0.5"></i>${deliv.distanceKm} km • ${formatMoney(deliv.feeUsd)}
+              <span class="font-bold text-[#7A5A1E] dark:text-[#D9B76F] truncate">${p.vendorName}</span>
+              <span class="shrink-0 font-semibold">
+                ${deliv.isCifPort ? 'CIF Mariel' : `${deliv.distanceKm} km • ${formatMoney(deliv.feeUsd)}`}
               </span>
             </div>
-            <h3 class="font-display font-bold text-base leading-snug mt-1 line-clamp-2">${p.title}</h3>
-            <p class="text-[11px] font-medium text-[#7A5A1E] dark:text-[#D9B76F] mt-1">${p.specs}</p>
-            <p class="text-xs opacity-75 mt-1 line-clamp-2">${p.description}</p>
+            <h3 class="font-display font-bold text-sm sm:text-base leading-snug mt-1 line-clamp-2">${p.title}</h3>
+            <p class="text-[11px] opacity-80 mt-1">${p.specs}</p>
           </div>
         </div>
 
-        <div class="space-y-2.5 pt-2 border-t border-stone-200/60 dark:border-white/10">
+        <div class="space-y-2 pt-2 border-t border-stone-200/60 dark:border-white/10">
           ${pricingBlock}
           ${actionButtons}
         </div>
@@ -703,7 +568,7 @@ function renderCatalog() {
 }
 
 // ============================================================================
-// CARRITO MULTINIVEL + CÁLCULO DE DOMICILIO GPS POR KILÓMETRO
+// CARRITO Y ENVÍO DE TICKET DE COMPRA A WHATSAPP (SIN PASARELA DE PAGO)
 // ============================================================================
 function addToCart(productId, mode) {
   const product = appState.products.find(p => String(p.id) === String(productId));
@@ -726,6 +591,7 @@ function addToCart(productId, mode) {
     cart.push({
       cartKey,
       productId: String(product.id),
+      sku: product.sku,
       title: product.title,
       vendorId: product.vendorId,
       vendorName: product.vendorName,
@@ -737,7 +603,7 @@ function addToCart(productId, mode) {
   }
 
   updateCartUI();
-  showToast(`Añadido al pedido: ${product.title} (${mode === 'WHOLESALE' ? 'Mayorista' : mode === 'CONTAINER_B2B' ? 'Contenedor B2B' : 'Minorista'})`);
+  showToast(`Añadido al ticket: ${product.title}`);
 }
 
 function updateCartItemQty(cartKey, delta) {
@@ -761,10 +627,9 @@ function updateCartUI() {
 
   if (cart.length === 0) {
     listEl.innerHTML = `
-      <div class="text-center py-12 opacity-70">
-        <i class="fa-solid fa-cart-flatbed-suitcase text-3xl mb-2 text-[#7A5A1E]"></i>
-        <p class="text-sm font-semibold">Tu carrito B2B / B2C está vacío</p>
-        <p class="text-xs mt-1">Agrega combos familiares, cajas mayoristas o contenedores.</p>
+      <div class="text-center py-10 opacity-70">
+        <i class="fa-solid fa-receipt text-2xl mb-2 text-[#7A5A1E]"></i>
+        <p class="text-xs font-semibold">Tu ticket de pedido está vacío</p>
       </div>
     `;
     summaryEl.innerHTML = '';
@@ -780,77 +645,72 @@ function updateCartUI() {
     uniqueVendorIds.add(item.vendorId);
 
     return `
-      <div class="p-3.5 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-3">
+      <div class="p-3 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
         <div class="min-w-0 flex-1">
-          <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#7A5A1E]/15 text-[#7A5A1E] dark:text-[#D9B76F]">
-            ${item.mode === 'WHOLESALE' ? 'Mayorista' : item.mode === 'CONTAINER_B2B' ? 'Contenedor CIF' : 'Minorista'}
-          </span>
-          <h4 class="font-bold text-xs mt-1 truncate">${item.title}</h4>
-          <p class="text-[11px] opacity-75">${item.vendorName} • ${item.unitLabel}</p>
-          <p class="text-xs font-extrabold mt-1">${formatMoney(lineUsd)}</p>
+          <span class="text-[10px] font-bold text-[#7A5A1E] dark:text-[#D9B76F] block">${item.vendorName}</span>
+          <h4 class="font-bold text-xs truncate">${item.title}</h4>
+          <p class="text-[11px] opacity-75">${item.unitLabel}</p>
+          <p class="text-xs font-extrabold mt-0.5">${formatMoney(lineUsd)}</p>
         </div>
         <div class="flex items-center gap-1.5">
           <button onclick="updateCartItemQty('${item.cartKey}', -1)" class="w-7 h-7 rounded-lg bg-white dark:bg-white/10 border border-stone-300 dark:border-white/10 font-bold text-xs">-</button>
-          <span class="w-7 text-center font-bold text-xs">${item.qty}</span>
+          <span class="w-6 text-center font-bold text-xs">${item.qty}</span>
           <button onclick="updateCartItemQty('${item.cartKey}', 1)" class="w-7 h-7 rounded-lg bg-white dark:bg-white/10 border border-stone-300 dark:border-white/10 font-bold text-xs">+</button>
         </div>
       </div>
     `;
   }).join('');
 
-  // Calcular envío sumando la ruta GPS real de cada negocio involucrado
   let totalDeliveryUsd = 0;
-  let routeDetailsHtml = '';
   uniqueVendorIds.forEach(vid => {
     const vendor = appState.vendors.find(v => v.id === vid);
     if (vendor) {
       const d = calculateVendorDelivery(vendor);
       totalDeliveryUsd += d.feeUsd;
-      routeDetailsHtml += `
-        <div class="flex justify-between text-[11px] opacity-80">
-          <span>Ruta ${vendor.name} (${d.distanceKm} km @ ${formatMoney(vendor.pricePerKmUsd)}/km):</span>
-          <span class="font-semibold">${formatMoney(d.feeUsd)}</span>
-        </div>
-      `;
     }
   });
 
   const grandTotalUsd = subtotalUsd + totalDeliveryUsd;
 
   summaryEl.innerHTML = `
-    <div class="space-y-2 pt-3 border-t border-stone-200 dark:border-white/10 text-xs">
-      <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-600/20">
-        <div class="font-bold flex items-center justify-between">
-          <span><i class="fa-solid fa-location-dot mr-1 text-[#7A5A1E]"></i>Destino: ${appState.selectedMunicipality}</span>
-          <button onclick="openDeliveryMapModal()" class="underline text-[#7A5A1E] dark:text-[#D9B76F]">Ajustar en Mapa</button>
+    <div class="space-y-1.5 pt-3 border-t border-stone-200 dark:border-white/10 text-xs">
+      <div class="flex justify-between">
+        <span class="opacity-75">Destino:</span>
+        <span class="font-bold">${appState.selectedMunicipality}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="opacity-75">Subtotal Catálogo:</span>
+        <span class="font-bold">${formatMoney(subtotalUsd)}</span>
+      </div>
+      ${totalDeliveryUsd > 0 ? `
+        <div class="flex justify-between text-emerald-800 dark:text-emerald-300">
+          <span>Domicilio GPS:</span>
+          <span class="font-bold">${formatMoney(totalDeliveryUsd)}</span>
         </div>
-        <p class="text-[11px] opacity-80 mt-0.5">${appState.userGps.address}</p>
-      </div>
-      ${routeDetailsHtml}
-      <div class="flex justify-between font-semibold pt-1">
-        <span>Subtotal Productos:</span>
-        <span>${formatMoney(subtotalUsd)}</span>
-      </div>
-      <div class="flex justify-between font-semibold text-emerald-800 dark:text-emerald-300">
-        <span>Domicilio GPS Total:</span>
-        <span>${formatMoney(totalDeliveryUsd)}</span>
-      </div>
+      ` : `
+        <div class="flex justify-between text-emerald-800 dark:text-emerald-300">
+          <span>Condición Marítima:</span>
+          <span class="font-bold">CIF Puerto del Mariel Incluido</span>
+        </div>
+      `}
       <div class="flex justify-between text-base font-extrabold pt-2 border-t border-stone-200 dark:border-white/10">
-        <span>Total a Pagar:</span>
+        <span>Total Estimado:</span>
         <span>${formatMoney(grandTotalUsd)}</span>
       </div>
     </div>
   `;
 }
 
+// Envío directo de Ticket de Compra a WhatsApp desde el Carrito
 function submitCheckoutOrder() {
   if (cart.length === 0) {
-    showToast('Agrega al menos un producto antes de confirmar el pedido.');
+    showToast('Agrega al menos un producto al carrito.');
     return;
   }
   const customerNameInput = document.getElementById('checkout-customer-name');
   const customerNotesInput = document.getElementById('checkout-customer-notes');
-  const customerName = (customerNameInput && customerNameInput.value.trim()) || 'Cliente Verificado Cuba';
+  const customerName = (customerNameInput && customerNameInput.value.trim()) || 'Cliente / Empresa Cuba';
+  const customerNotes = (customerNotesInput && customerNotesInput.value.trim()) || '';
 
   let subtotalUsd = 0;
   let deliveryUsd = 0;
@@ -859,8 +719,9 @@ function submitCheckoutOrder() {
     subtotalUsd += i.unitPriceUsd * i.qty;
     vendorSet.add(i.vendorId);
   });
+
   let firstVendor = appState.vendors[0];
-  let distKm = 2.1;
+  let distKm = 0;
   vendorSet.forEach(vid => {
     const v = appState.vendors.find(x => x.id === vid);
     if (v) {
@@ -871,32 +732,66 @@ function submitCheckoutOrder() {
     }
   });
 
+  const totalUsd = Number((subtotalUsd + deliveryUsd).toFixed(2));
+  const ticketId = `TCK-${Math.floor(1000 + Math.random() * 9000)}`;
+  const dateStr = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+  // Guardar en historial del Dashboard
   const newOrder = {
-    id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    id: ticketId,
+    date: dateStr,
     customerName,
     customerRole: appState.currentRole,
     vendorName: firstVendor.name,
     orderType: cart.some(i => i.mode === 'CONTAINER_B2B')
-      ? 'IMPORTACIÓN CONTENEDOR (B2B)'
-      : cart.some(i => i.mode === 'WHOLESALE')
-      ? 'MAYORISTA B2B'
-      : 'MINORISTA DOMICILIO (B2C)',
+      ? 'CONTENEDOR CIF MARIEL (Ticket WhatsApp)'
+      : 'PEDIDO CATÁLOGO (Ticket WhatsApp)',
     municipality: appState.selectedMunicipality,
     distanceKm: distKm,
     deliveryUsd: Number(deliveryUsd.toFixed(2)),
     subtotalUsd: Number(subtotalUsd.toFixed(2)),
-    totalUsd: Number((subtotalUsd + deliveryUsd).toFixed(2)),
-    status: 'Confirmado • En Despacho GPS',
-    itemsSummary: cart.map(i => `${i.qty}x ${i.title}`).join(', ') + (customerNotesInput && customerNotesInput.value ? ` | Nota: ${customerNotesInput.value}` : '')
+    totalUsd,
+    status: 'Ticket Enviado a WhatsApp',
+    itemsSummary: cart.map(i => `${i.qty}x ${i.title} ($${(i.unitPriceUsd * i.qty).toLocaleString('en-US')})`).join(' | ')
   };
 
   appState.orders.unshift(newOrder);
   saveMercaprosState(appState);
+
+  // Construir Ticket estructurado para enviar a WhatsApp
+  const lines = [
+    `*MERCAPROS CUBA - TICKET DE PEDIDO ${ticketId}*`,
+    `Fecha: ${dateStr}`,
+    `Cliente / Empresa: ${customerName}`,
+    `Ubicación / Destino: ${appState.selectedMunicipality} (${appState.userGps.address})`,
+    `--------------------------------`,
+    `*DETALLE DEL PEDIDO:*`
+  ];
+
+  cart.forEach((item, idx) => {
+    const lineTotal = (item.unitPriceUsd * item.qty).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    lines.push(`${idx + 1}. *${item.title}*`);
+    lines.push(`   Tienda: ${item.vendorName} | Cant: ${item.qty} (${item.unitLabel}) | Subtotal: $${lineTotal} USD`);
+  });
+
+  lines.push(`--------------------------------`);
+  if (deliveryUsd > 0) {
+    lines.push(`Domicilio GPS: $${deliveryUsd.toFixed(2)} USD`);
+  } else {
+    lines.push(`Condición: CIF Puerto del Mariel Cuba`);
+  }
+  lines.push(`*TOTAL TICKET: $${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD*`);
+  if (customerNotes) {
+    lines.push(`Nota: ${customerNotes}`);
+  }
+
+  const waUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
+  window.open(waUrl, '_blank', 'noopener');
+
   cart = [];
   updateCartUI();
   toggleCartDrawer(false);
-  showToast(`Pedido ${newOrder.id} registrado con éxito. Rastreo GPS activo hacia ${appState.selectedMunicipality}.`);
+  showToast(`Ticket ${ticketId} generado y abierto en WhatsApp.`);
 }
 
 function toggleCartDrawer(show) {
@@ -911,7 +806,7 @@ function toggleCartDrawer(show) {
 }
 
 // ============================================================================
-// SISTEMA DE DOMICILIO Y MAPA INTERACTIVO GPS (LEAFLET + PRECIO POR KM)
+// SISTEMA DE DOMICILIO Y MAPA INTERACTIVO GPS (LEAFLET)
 // ============================================================================
 function populateProvinceAndMunicipalitySelectors() {
   const provSelect = document.getElementById('header-province-select');
@@ -958,8 +853,7 @@ function onMunicipalityChange(newMun) {
 
 function refreshAllLocationDependentViews() {
   updateGpsHeaderBadge();
-  renderSuperAppModules();
-  renderVendorPills();
+  renderStoresSection();
   renderCatalog();
   updateCartUI();
   if (deliveryMap && userMarker) {
@@ -1000,16 +894,15 @@ function initOrRefreshLeafletMap() {
   if (!mapContainer || typeof L === 'undefined') return;
 
   if (!deliveryMap) {
-    deliveryMap = L.map('cuba-leaflet-map').setView([appState.userGps.lat, appState.userGps.lng], 13);
+    deliveryMap = L.map('cuba-leaflet-map').setView([appState.userGps.lat, appState.userGps.lng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: '© OpenStreetMap • Mercapros Logística Cuba'
+      attribution: '© OpenStreetMap'
     }).addTo(deliveryMap);
 
-    // Pin arrastrable del cliente
     userMarker = L.marker([appState.userGps.lat, appState.userGps.lng], { draggable: true })
       .addTo(deliveryMap)
-      .bindPopup('<b>Tu Punto de Entrega en Cuba</b><br>Arrastra el pin o haz clic en el mapa.')
+      .bindPopup('<b>Punto de Entrega</b><br>Arrastra el pin en el mapa.')
       .openPopup();
 
     userMarker.on('dragend', (e) => {
@@ -1022,11 +915,10 @@ function initOrRefreshLeafletMap() {
     });
   } else {
     deliveryMap.invalidateSize();
-    deliveryMap.setView([appState.userGps.lat, appState.userGps.lng], 13);
+    deliveryMap.setView([appState.userGps.lat, appState.userGps.lng], 12);
     userMarker.setLatLng([appState.userGps.lat, appState.userGps.lng]);
   }
 
-  // Dibujar almacenes de Mipymes, TCP y Puerto Mariel
   vendorMarkers.forEach(m => deliveryMap.removeLayer(m));
   vendorMarkers = [];
 
@@ -1039,7 +931,7 @@ function initOrRefreshLeafletMap() {
       fillOpacity: 0.95
     })
       .addTo(deliveryMap)
-      .bindPopup(`<b>${v.name}</b><br>${v.badge}<br>Tarifa: $${v.pricePerKmUsd}/km + base $${v.baseDeliveryFeeUsd}`);
+      .bindPopup(`<b>${v.name}</b><br>${v.badge}`);
     vendorMarkers.push(m);
   });
 
@@ -1071,7 +963,7 @@ function updateUserCoordinatesFromMap(lat, lng) {
   saveMercaprosState(appState);
   updateGpsHeaderBadge();
   renderMapVendorDistancesTable();
-  renderVendorPills();
+  renderStoresSection();
   renderCatalog();
   updateCartUI();
 }
@@ -1082,7 +974,7 @@ function saveCustomUserAddress() {
     appState.userGps.address = addrInput.value.trim();
     saveMercaprosState(appState);
     updateCartUI();
-    showToast('Dirección exacta y coordenadas GPS guardadas para tus envíos.');
+    showToast('Dirección GPS actualizada.');
     closeDeliveryMapModal();
   }
 }
@@ -1095,18 +987,18 @@ function renderMapVendorDistancesTable() {
     const d = calculateVendorDelivery(v);
     return `
       <tr class="border-b border-stone-200/70 dark:border-white/10">
-        <td class="py-2.5 pr-2 font-bold">${v.name} <span class="block text-[10px] font-normal opacity-75">${v.municipality}</span></td>
-        <td class="py-2.5 px-2">${formatMoney(v.baseDeliveryFeeUsd)}</td>
-        <td class="py-2.5 px-2 font-semibold text-[#7A5A1E] dark:text-[#D9B76F]">${formatMoney(v.pricePerKmUsd)} / km</td>
-        <td class="py-2.5 px-2 font-bold">${d.distanceKm} km</td>
-        <td class="py-2.5 pl-2 text-right font-extrabold text-emerald-800 dark:text-emerald-300">${formatMoney(d.feeUsd)}</td>
+        <td class="py-2 pr-2 font-bold">${v.name}</td>
+        <td class="py-2 px-1">${d.isCifPort ? 'CIF Mariel' : formatMoney(v.baseDeliveryFeeUsd)}</td>
+        <td class="py-2 px-1 font-semibold text-[#7A5A1E] dark:text-[#D9B76F]">${d.isCifPort ? '-' : `${formatMoney(v.pricePerKmUsd)}/km`}</td>
+        <td class="py-2 px-1">${d.isCifPort ? 'Puerto' : `${d.distanceKm} km`}</td>
+        <td class="py-2 pl-2 text-right font-extrabold text-emerald-800 dark:text-emerald-300">${d.isCifPort ? 'Incluido' : formatMoney(d.feeUsd)}</td>
       </tr>
     `;
   }).join('');
 }
 
 // ============================================================================
-// DASHBOARD ADMINISTRADOR MÓVIL ("TIERRA QUERIDA" 5 PESTAÑAS + RBAC MIPYME/TCP)
+// DASHBOARD ADMINISTRADOR MÓVIL (5 PESTAÑAS + RBAC)
 // ============================================================================
 function openAdminModal() {
   if (!isAdminAuthenticated) {
@@ -1128,7 +1020,7 @@ function handleAdminLogin(e) {
   const roleSelect = document.getElementById('admin-role-login-select').value;
 
   if (!email) {
-    showToast('Ingresa el correo del negocio (ej. admin@mercapros.com)');
+    showToast('Ingresa el correo del negocio.');
     return;
   }
 
@@ -1140,17 +1032,14 @@ function handleAdminLogin(e) {
   }
   saveMercaprosState(appState);
 
-  // Mostrar píldora dorada de administración en cabecera
   const goldPill = document.getElementById('header-admin-gold-pill');
-  if (goldPill) {
-    goldPill.classList.remove('hidden');
-  }
+  if (goldPill) goldPill.classList.remove('hidden');
 
   document.getElementById('admin-login-modal').classList.add('hidden');
   document.getElementById('admin-dashboard-modal').classList.remove('hidden');
   renderRoleBar();
   renderAdminDashboard();
-  showToast(`Panel de Control activado para: ${vendor ? vendor.name : 'Administrador'}`);
+  showToast(`Panel abierto: ${vendor ? vendor.name : 'Admin'}`);
 }
 
 function switchAdminVendorProfile(vendorId) {
@@ -1169,9 +1058,9 @@ function switchAdminTab(tabId) {
   activeAdminTab = tabId;
   document.querySelectorAll('.js-admin-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-tab') === tabId) {
-      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-2';
+      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-2 shrink-0';
     } else {
-      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/60 flex items-center gap-2';
+      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/60 flex items-center gap-2 shrink-0';
     }
   });
 
@@ -1185,152 +1074,110 @@ function switchAdminTab(tabId) {
 }
 
 function renderAdminDashboard() {
-  const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId) || appState.vendors[1];
-  const roleRules = ROLE_MATRIX[activeVendor.role] || ROLE_MATRIX.MIPYME;
+  const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId) || appState.vendors[0];
 
-  // Selector superior de negocio activo
   const vendorSwitcher = document.getElementById('admin-active-vendor-select');
-  if (vendorSwitcher) {
-    vendorSwitcher.value = activeVendor.id;
-  }
+  if (vendorSwitcher) vendorSwitcher.value = activeVendor.id;
 
-  // Banner de permisos RBAC del negocio dentro del Dashboard
-  const rbacBanner = document.getElementById('admin-rbac-status-banner');
-  if (rbacBanner) {
-    rbacBanner.innerHTML = `
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <span class="text-xs font-extrabold uppercase tracking-wider text-[#7A5A1E] dark:text-[#D9B76F]">${activeVendor.badge}</span>
-          <h4 class="font-display text-lg font-bold">${activeVendor.name}</h4>
-        </div>
-        <div class="flex flex-wrap gap-2 text-xs">
-          ${activeVendor.role === 'TCP' ? `
-            <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold border border-amber-600/30">
-              <i class="fa-solid fa-lock mr-1"></i>Regla TCP: Compra Mayor/Menor • Vende SOLO Minorista
-            </span>
-          ` : activeVendor.role === 'MIPYME' ? `
-            <span class="px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-900 dark:text-emerald-200 font-bold border border-emerald-600/30">
-              <i class="fa-solid fa-check-double mr-1"></i>Regla Mipyme: Habilitada Venta Mayorista y Minorista
-            </span>
-          ` : `
-            <span class="px-3 py-1 rounded-full bg-teal-600/20 text-teal-900 dark:text-teal-200 font-bold border border-teal-600/30">
-              <i class="fa-solid fa-ship mr-1"></i>Regla Exportador: Venta por Contenedores 20'/40' CIF Cuba
-            </span>
-          `}
-        </div>
-      </div>
-    `;
-  }
-
-  // Ajustar campos de precios en el formulario según permisos de venta del rol (TCP no puede activar precio Mayorista)
   const wholesaleFieldGroup = document.getElementById('admin-wholesale-field-group');
   const containerFieldGroup = document.getElementById('admin-container-field-group');
   if (wholesaleFieldGroup && containerFieldGroup) {
     if (activeVendor.role === 'TCP') {
       wholesaleFieldGroup.classList.add('opacity-40', 'pointer-events-none');
       containerFieldGroup.classList.add('hidden');
-      document.getElementById('prod-wholesale-Note').textContent = 'Bloqueado para TCP (Solo Venta Minorista)';
+      document.getElementById('prod-wholesale-Note').textContent = 'TCP: Solo Venta Minorista';
     } else if (activeVendor.role === 'MIPYME') {
       wholesaleFieldGroup.classList.remove('opacity-40', 'pointer-events-none');
       containerFieldGroup.classList.add('hidden');
-      document.getElementById('prod-wholesale-Note').textContent = 'Habilitado para Mipyme';
+      document.getElementById('prod-wholesale-Note').textContent = 'Mipyme: Mayorista y Minorista';
     } else {
       containerFieldGroup.classList.remove('hidden');
       wholesaleFieldGroup.classList.remove('opacity-40', 'pointer-events-none');
+      document.getElementById('prod-wholesale-Note').textContent = 'Exportador: Venta por Contenedor';
     }
   }
 
-  // Poblar selector de categorías en el formulario de productos
   const catSelect = document.getElementById('prod-category-input');
   if (catSelect) {
     catSelect.innerHTML = appState.categories
-      .filter(c => c.id !== 'all')
+      .filter(c => c.id !== 'all' && c.id !== 'tiendas')
       .map(c => `<option value="${c.id}">${c.name}</option>`)
       .join('');
   }
 
-  // Renderizar lista de inventario en Pestaña 1
   const invList = document.getElementById('admin-inventory-list');
   if (invList) {
     const vendorProducts = appState.products.filter(p => p.vendorId === activeVendor.id);
     invList.innerHTML = vendorProducts.map(p => `
-      <div class="p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
+      <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-3 min-w-0">
-          <img src="${p.image}" alt="${p.title}" class="w-14 h-14 rounded-xl object-cover border border-stone-200" />
+          <img src="${p.image}" alt="${p.title}" class="w-12 h-12 rounded-xl object-cover border border-stone-200" />
           <div class="min-w-0">
-            <span class="text-[10px] font-mono font-bold opacity-70">${p.sku} • Stock: ${p.stock}</span>
-            <h5 class="font-bold text-sm truncate">${p.title}</h5>
-            <p class="text-xs text-[#7A5A1E] dark:text-[#D9B76F] font-semibold">
-              Detalle: ${formatMoney(p.priceRetailUsd)}
-              ${p.saleModes.includes('WHOLESALE') ? ` | Mayorista: ${formatMoney(p.priceWholesaleUsd)}` : ''}
-              ${p.saleModes.includes('CONTAINER_B2B') ? ` | Contenedor: ${formatMoney(p.priceContainerUsd)}` : ''}
+            <span class="text-[10px] font-mono opacity-70">${p.sku}</span>
+            <h5 class="font-bold text-xs sm:text-sm truncate">${p.title}</h5>
+            <p class="text-xs text-[#7A5A1E] dark:text-[#D9B76F] font-bold">
+              ${p.saleModes.includes('CONTAINER_B2B')
+                ? `Contenedor CIF: ${formatMoney(p.priceContainerUsd)} (${p.unitPriceLabel || ''})`
+                : `Minorista: ${formatMoney(p.priceRetailUsd)}${p.saleModes.includes('WHOLESALE') ? ` • Mayorista: ${formatMoney(p.priceWholesaleUsd)}` : ''}`
+              }
             </p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="loadProductIntoForm('${String(p.id)}')" class="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 text-xs font-bold hover:bg-[#7A5A1E] hover:text-white transition-all">
-            <i class="fa-solid fa-pen mr-1"></i>Editar
+        <div class="flex items-center gap-1.5">
+          <button onclick="loadProductIntoForm('${String(p.id)}')" class="px-2.5 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 text-xs font-bold hover:bg-[#7A5A1E] hover:text-white">
+            <i class="fa-solid fa-pen"></i>
           </button>
-          <button onclick="deleteProductStrict('${String(p.id)}')" class="px-3 py-1.5 rounded-lg bg-red-600/15 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-600 hover:text-white transition-all">
+          <button onclick="deleteProductStrict('${String(p.id)}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/15 text-red-700 text-xs font-bold hover:bg-red-600 hover:text-white">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       </div>
-    `).join('') || `<p class="text-xs opacity-70 py-4">Este negocio aún no tiene productos en su inventario.</p>`;
+    `).join('') || `<p class="text-xs opacity-70 py-4">Sin productos en esta tienda.</p>`;
   }
 
-  // Renderizar Pestaña 2: Anuncios y Ofertas
   const annList = document.getElementById('admin-announcements-list');
   if (annList) {
     annList.innerHTML = appState.announcements.map(a => `
-      <div class="p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-3">
+      <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
         <div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200">${a.badge}</span>
-          <h5 class="font-bold text-sm mt-1">${a.title}</h5>
-          <p class="text-xs opacity-75">${a.subtitle}</p>
+          <h5 class="font-bold text-xs">${a.title}</h5>
+          <p class="text-[11px] opacity-75">${a.subtitle}</p>
         </div>
-        <button onclick="deleteAnnouncement('${String(a.id)}')" class="px-3 py-1.5 rounded-lg bg-red-600/15 text-red-700 text-xs font-bold">
-          Eliminar
+        <button onclick="deleteAnnouncement('${String(a.id)}')" class="px-2.5 py-1 rounded-lg bg-red-600/15 text-red-700 text-xs font-bold">
+          Quitar
         </button>
       </div>
     `).join('');
   }
 
-  // Renderizar Pestaña 3: Categorías Dinámicas
   const catList = document.getElementById('admin-categories-list');
   if (catList) {
     catList.innerHTML = appState.categories.filter(c => c.id !== 'all').map(c => `
       <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
           <i class="fa-solid ${c.icon} text-[#7A5A1E]"></i>
           <span class="font-bold text-xs">${c.name}</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 dark:bg-white/10">${c.badge}</span>
         </div>
         <button onclick="deleteCategoryStrict('${String(c.id)}')" class="text-xs text-red-600 font-bold hover:underline">Quitar</button>
       </div>
     `).join('');
   }
 
-  // Renderizar Pestaña 4: Historial de Pedidos
   const ordList = document.getElementById('admin-orders-list');
   if (ordList) {
     ordList.innerHTML = appState.orders.map(o => `
-      <div class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-1.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-1">
+        <div class="flex items-center justify-between">
           <span class="font-mono font-extrabold text-xs text-[#7A5A1E] dark:text-[#D9B76F]">${o.id} • ${o.date}</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600/15 text-emerald-800 dark:text-emerald-300">${o.status}</span>
+          <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">${o.status}</span>
         </div>
-        <div class="font-bold text-sm">${o.customerName} <span class="text-xs font-normal opacity-75">→ ${o.vendorName}</span></div>
-        <p class="text-xs opacity-80">${o.itemsSummary}</p>
-        <div class="flex flex-wrap items-center justify-between pt-2 border-t border-stone-200/60 dark:border-white/10 text-xs">
-          <span><i class="fa-solid fa-route mr-1"></i>${o.municipality} (${o.distanceKm} km • Domicilio: ${formatMoney(o.deliveryUsd)})</span>
-          <span class="font-extrabold text-sm">Total: ${formatMoney(o.totalUsd)}</span>
-        </div>
+        <div class="font-bold text-xs">${o.customerName} → ${o.vendorName}</div>
+        <p class="text-[11px] opacity-80">${o.itemsSummary}</p>
+        <div class="text-xs font-extrabold pt-1">Total: ${formatMoney(o.totalUsd)}</div>
       </div>
     `).join('');
   }
 
-  // Renderizar Pestaña 5: Configuración de Tarifa por Km del Negocio (Mipyme/TCP) & Supabase
   document.getElementById('vendor-cfg-basefee').value = activeVendor.baseDeliveryFeeUsd;
   document.getElementById('vendor-cfg-kmprice').value = activeVendor.pricePerKmUsd;
   document.getElementById('vendor-cfg-lat').value = activeVendor.lat;
@@ -1339,9 +1186,6 @@ function renderAdminDashboard() {
   document.getElementById('supabase-key-input').value = appState.supabaseConfig.anonKey || '';
 }
 
-// ============================================================================
-// MOTOR HTML5 CANVAS PARA COMPRESIÓN DE FOTOS MÓVILES (MÁX 800x800px, ~45KB)
-// ============================================================================
 function handleProductPhotoUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
@@ -1368,7 +1212,6 @@ function handleProductPhotoUpload(event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Exportar comprimido a WebP/JPEG (~40-60KB ideal para redes móviles de Cuba)
       let compressedDataUrl = canvas.toDataURL('image/webp', 0.72);
       if (compressedDataUrl.indexOf('data:image/webp') !== 0) {
         compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
@@ -1384,21 +1227,16 @@ function handleProductPhotoUpload(event) {
       }
 
       const approxKb = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
-      const statusBadge = document.getElementById('canvas-compression-badge');
-      if (statusBadge) {
-        statusBadge.textContent = `Comprimida con HTML5 Canvas: ${width}x${height}px (~${approxKb} KB)`;
-      }
-      showToast(`Foto optimizada a ${approxKb} KB para carga rápida en Cuba.`);
+      showToast(`Foto optimizada (${approxKb} KB).`);
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// CRUD de Productos (Pestaña 1) con Strict String ID y validación RBAC
 function saveProductFromAdmin(e) {
   if (e) e.preventDefault();
-  const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId) || appState.vendors[1];
+  const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId) || appState.vendors[0];
 
   const title = document.getElementById('prod-title-input').value.trim();
   const sku = document.getElementById('prod-sku-input').value.trim() || `SKU-${Date.now().toString().slice(-4)}`;
@@ -1408,26 +1246,21 @@ function saveProductFromAdmin(e) {
   const priceContainerUsd = Number(document.getElementById('prod-container-input').value || 0);
   const minWholesaleQty = Number(document.getElementById('prod-minqty-input').value || 5);
   const stock = Number(document.getElementById('prod-stock-input').value || 25);
-  const unitRetail = document.getElementById('prod-unitretail-input').value.trim() || 'Unidad al detalle';
+  const unitRetail = document.getElementById('prod-unitretail-input').value.trim() || 'Unidad';
   const unitWholesale = document.getElementById('prod-unitwholesale-input').value.trim() || 'Caja Mayorista';
-  const specs = document.getElementById('prod-specs-input').value.trim() || 'Entrega Garantizada en Cuba';
+  const specs = document.getElementById('prod-specs-input').value.trim() || 'Entrega Garantizada';
   const description = document.getElementById('prod-desc-input').value.trim();
   const isFlashOffer = document.getElementById('prod-flash-checkbox').checked;
   const image = document.getElementById('prod-image-dataurl').value || 'assets/combo-proteina.jpg';
 
-  if (!title) {
-    showToast('Ingresa el nombre del producto o combo.');
-    return;
-  }
+  if (!title) return;
 
-  // Determinar modalidades de venta respetando estrictamente la jerarquía Exportador / Mipyme / TCP
   let saleModes = ['RETAIL'];
   if (activeVendor.role === 'EXPORTADOR_B2B') {
     saleModes = ['CONTAINER_B2B'];
   } else if (activeVendor.role === 'MIPYME') {
     saleModes = priceWholesaleUsd > 0 ? ['WHOLESALE', 'RETAIL'] : ['RETAIL'];
   } else if (activeVendor.role === 'TCP') {
-    // TCP jamás puede publicar venta mayorista
     saleModes = ['RETAIL'];
   }
 
@@ -1436,18 +1269,20 @@ function saveProductFromAdmin(e) {
     sku,
     title,
     category,
+    isContainerOffer: activeVendor.role === 'EXPORTADOR_B2B',
     vendorId: activeVendor.id,
     vendorName: activeVendor.name,
     vendorRole: activeVendor.role,
     saleModes,
-    priceContainerUsd: activeVendor.role === 'EXPORTADOR_B2B' ? (priceContainerUsd || priceRetailUsd) : 0,
+    priceContainerUsd: activeVendor.role === 'EXPORTADOR_B2B' ? (priceContainerUsd || priceWholesaleUsd || priceRetailUsd) : 0,
     priceWholesaleUsd: activeVendor.role === 'TCP' ? priceRetailUsd : (priceWholesaleUsd || priceRetailUsd),
     priceRetailUsd,
-    oldPriceUsd: Number((priceRetailUsd * 1.15).toFixed(2)),
-    discountPct: isFlashOffer ? 15 : 0,
+    unitPriceLabel: `$${priceRetailUsd.toFixed(2)} USD / Ud`,
+    oldPriceUsd: 0,
+    discountPct: isFlashOffer ? 10 : 0,
     minWholesaleQty,
     unitRetail,
-    unitWholesale: activeVendor.role === 'TCP' ? 'Venta exclusiva Minorista (TCP)' : unitWholesale,
+    unitWholesale: activeVendor.role === 'TCP' ? 'TCP: Solo Venta Minorista' : unitWholesale,
     stock,
     image,
     isFlashOffer,
@@ -1467,7 +1302,7 @@ function saveProductFromAdmin(e) {
   resetProductForm();
   renderAdminDashboard();
   renderCatalog();
-  showToast('Producto guardado en el inventario del negocio.');
+  showToast('Producto guardado.');
 }
 
 function loadProductIntoForm(productId) {
@@ -1480,7 +1315,7 @@ function loadProductIntoForm(productId) {
   document.getElementById('prod-retail-input').value = p.priceRetailUsd;
   document.getElementById('prod-wholesale-input').value = p.priceWholesaleUsd;
   document.getElementById('prod-container-input').value = p.priceContainerUsd || 0;
-  document.getElementById('prod-minqty-input').value = p.minWholesaleQty || 5;
+  document.getElementById('prod-minqty-input').value = p.minWholesaleQty || 1;
   document.getElementById('prod-stock-input').value = p.stock || 20;
   document.getElementById('prod-unitretail-input').value = p.unitRetail || '';
   document.getElementById('prod-unitwholesale-input').value = p.unitWholesale || '';
@@ -1503,15 +1338,14 @@ function deleteProductStrict(productId) {
   saveMercaprosState(appState);
   renderAdminDashboard();
   renderCatalog();
-  showToast('Producto eliminado del catálogo.');
+  showToast('Producto eliminado.');
 }
 
-// Pestaña 2: Crear / Eliminar Anuncios y Ofertas
 function addAnnouncementFromAdmin(e) {
   if (e) e.preventDefault();
   const title = document.getElementById('ann-title-input').value.trim();
   const subtitle = document.getElementById('ann-subtitle-input').value.trim();
-  const badge = document.getElementById('ann-badge-input').value.trim() || 'PROMO CUBA';
+  const badge = document.getElementById('ann-badge-input').value.trim() || 'PROMO';
   const code = document.getElementById('ann-code-input').value.trim();
   if (!title) return;
 
@@ -1524,25 +1358,21 @@ function addAnnouncementFromAdmin(e) {
     active: true
   });
   saveMercaprosState(appState);
-  renderAnnouncementsBanner();
   renderAdminDashboard();
   e.target.reset();
-  showToast('Promoción publicada en vivo.');
+  showToast('Promoción guardada.');
 }
 
 function deleteAnnouncement(id) {
   const strId = String(id);
   appState.announcements = appState.announcements.filter(a => String(a.id) !== strId);
   saveMercaprosState(appState);
-  renderAnnouncementsBanner();
   renderAdminDashboard();
 }
 
-// Pestaña 3: Motor Dinámico de Categorías
 function addCategoryFromAdmin(e) {
   if (e) e.preventDefault();
   const name = document.getElementById('cat-name-input').value.trim();
-  const badge = document.getElementById('cat-badge-input').value.trim() || 'Nuevo';
   const icon = document.getElementById('cat-icon-input').value.trim() || 'fa-tag';
   if (!name) return;
 
@@ -1551,14 +1381,13 @@ function addCategoryFromAdmin(e) {
     id: slug,
     name,
     icon,
-    badge,
     tierAccess: 'ALL'
   });
   saveMercaprosState(appState);
   renderCategoriesBar();
   renderAdminDashboard();
   e.target.reset();
-  showToast(`Categoría "${name}" agregada al menú en vivo.`);
+  showToast(`Categoría "${name}" agregada.`);
 }
 
 function deleteCategoryStrict(catId) {
@@ -1569,22 +1398,21 @@ function deleteCategoryStrict(catId) {
   renderAdminDashboard();
 }
 
-// Pestaña 5: Guardar Tarifa por Km del Negocio (Mipyme / TCP), Coordenadas y Backup JSON 1-Clic
 function saveVendorLogisticsConfig(e) {
   if (e) e.preventDefault();
   const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId);
   if (!activeVendor) return;
 
-  activeVendor.baseDeliveryFeeUsd = Number(document.getElementById('vendor-cfg-basefee').value || 1.5);
-  activeVendor.pricePerKmUsd = Number(document.getElementById('vendor-cfg-kmprice').value || 0.5);
+  activeVendor.baseDeliveryFeeUsd = Number(document.getElementById('vendor-cfg-basefee').value || 0);
+  activeVendor.pricePerKmUsd = Number(document.getElementById('vendor-cfg-kmprice').value || 0);
   activeVendor.lat = Number(document.getElementById('vendor-cfg-lat').value || activeVendor.lat);
   activeVendor.lng = Number(document.getElementById('vendor-cfg-lng').value || activeVendor.lng);
 
   saveMercaprosState(appState);
-  renderVendorPills();
+  renderStoresSection();
   renderCatalog();
   updateCartUI();
-  showToast(`Tarifa de domicilio actualizada: $${activeVendor.pricePerKmUsd} USD/km para ${activeVendor.name}`);
+  showToast(`Tarifa actualizada para ${activeVendor.name}`);
 }
 
 function saveSupabaseCredentials(e) {
@@ -1593,7 +1421,7 @@ function saveSupabaseCredentials(e) {
   appState.supabaseConfig.anonKey = document.getElementById('supabase-key-input').value.trim();
   saveMercaprosState(appState);
   syncFromSupabase(appState, (res) => {
-    showToast(res.synced ? 'Conectado y sincronizado con Supabase Cloud.' : `Guardado local (${res.reason})`);
+    showToast(res.synced ? 'Sincronizado con Supabase.' : `Guardado local.`);
   });
 }
 
@@ -1605,7 +1433,6 @@ function exportBackupJson() {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  showToast('Copia de seguridad JSON descargada.');
 }
 
 function importBackupJson(event) {
@@ -1627,15 +1454,14 @@ function importBackupJson(event) {
   reader.readAsText(file);
 }
 
-// Notificación Flotante (Toast)
 function showToast(msg) {
   const toast = document.getElementById('mercapros-toast');
   const text = document.getElementById('mercapros-toast-text');
   if (!toast || !text) return;
   text.textContent = msg;
-  toast.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+  toast.classList.remove('hidden');
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(() => {
     toast.classList.add('hidden');
-  }, 3800);
+  }, 3000);
 }
