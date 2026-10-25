@@ -2,7 +2,7 @@
 // MERCAPROS CUBA - MOTOR DE DATOS DUAL-LAYER (LOCALSTORAGE + SUPABASE)
 // ============================================================================
 
-const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v30_wssnd_db';
+const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v31_whitebg_db';
 
 // Provincias y Municipios de Cuba con Coordenadas GPS Reales para Enrutamiento Haversine
 const CUBA_GEO = {
@@ -73,7 +73,7 @@ const DEFAULT_VENDORS = [
   {
     id: "v-mip-01",
     name: "Alimentos Del Valle S.U.R.L.",
-    logo: "assets/combo-proteina.jpg",
+    logo: "assets/local-lomo-cerdo-5lb.jpg",
     role: "MIPYME",
     badge: "Mipyme Mayorista & Minorista",
     province: "La Habana",
@@ -94,7 +94,7 @@ const DEFAULT_VENDORS = [
   {
     id: "v-mip-02",
     name: "ElectroHabana Solar S.R.L.",
-    logo: "assets/electro-hogar.jpg",
+    logo: "assets/local-ecoflow-solar.jpg",
     role: "MIPYME",
     badge: "Mipyme Mayorista & Minorista",
     province: "La Habana",
@@ -115,7 +115,7 @@ const DEFAULT_VENDORS = [
   {
     id: "v-tcp-01",
     name: "Mercadito La Víbora Express (TCP)",
-    logo: "assets/combo-proteina.jpg",
+    logo: "assets/local-combo-despensa.jpg",
     role: "TCP",
     badge: "TCP Venta Minorista",
     province: "La Habana",
@@ -135,7 +135,7 @@ const DEFAULT_VENDORS = [
   }
 ];
 
-// Catálogo Oficial: Las 17 Ofertas de Contenedores de WSSND SKYLINK (+10% aplicado) + Productos Locales Mipyme/TCP
+// Catálogo Oficial: Cada uno de los 21 productos con su fotografía individual en Fondo Blanco (#FFFFFF)
 const DEFAULT_PRODUCTS = [
   // ==========================================================================
   // 17 OFERTAS DE IMPORTACIÓN POR CONTENEDOR CIF MARIEL - WSSND SKYLINK (+10%)
@@ -160,11 +160,11 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 25 TM (Sacos de 25 Kg)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 15,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-01-harina-25kg.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Turquía • Naviera: CMA-CGM • Prod: 7 días • Mín: 25 TM • $0.76/Kg",
-    description: "Harina de trigo de fuerza para panificación con 12.5% mínimo de proteína en sacos de 25 kg. Precio total por contenedor CIF Mariel con margen comercial incluido."
+    description: "Harina de trigo de fuerza para panificación con 12.5% mínimo de proteína en sacos de 25 kg. Precio total por contenedor CIF Mariel."
   },
   {
     id: "wssnd-02",
@@ -186,7 +186,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 25 TM (Paquetes 1 Kg)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 12,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-02-harina-1kg.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Turquía • Naviera: CMA-CGM • Prod: 7 días • Mín: 25 TM • $0.98/Kg",
@@ -212,7 +212,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 27 TM (1 Kg x 10 pzas)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 20,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-03-azucar-1kg.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Brasil • Naviera: CMA-CGM • Prod: 7 días • Mín: 27 TM • $1.02/Kg",
@@ -238,7 +238,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 26 TM (1 Kg x 30 pzas)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 18,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-04-arroz-1kg.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Guyana / Brasil • Naviera: CMA-CGM • Prod: 7 días • 26 TM • $0.94/Kg",
@@ -264,7 +264,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 27 TM (54,000 paquetes de 500g)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 14,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-05-spaghetti-500g.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Turquía • Naviera: CMA-CGM • Prod: 15 días • 54,000 Paq • $0.50/Ud",
@@ -290,7 +290,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 32,800 Botellas (1,640 Cajas x 20 uds)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 10,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-06-aceite-900ml.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Brasil • Naviera: CMA-CGM • Prod: 15 días • 32,800 Botellas • $1.86/Ud",
@@ -316,7 +316,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 25,000 Kg (Bolsas de 30 x 1 Kg)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 12,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-07-frijol-1kg.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Brasil • Naviera: CMA-CGM • Prod: 10 días • 25,000 Kg • $1.21/Kg",
@@ -342,7 +342,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 58,032 Latas de 33 cl",
     unitWholesale: "CIF Mariel • Naviera CTM Directo",
     stock: 16,
-    image: "assets/hero-b2b-port.jpg",
+    image: "assets/wssnd-08-cerveza-33cl.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: España • Naviera: CTM Directo • Prod: 15 días • 58,032 Latas • $0.43/Ud",
@@ -368,7 +368,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 58,032 Latas de 33 cl",
     unitWholesale: "CIF Mariel • Naviera CTM Directo",
     stock: 18,
-    image: "assets/hero-b2b-port.jpg",
+    image: "assets/wssnd-09-refrescos-33cl.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: España • Naviera: CTM Directo • Prod: 15 días • 58,032 Latas • $0.39/Ud",
@@ -394,7 +394,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 2,745 Cajas (98,820 Paquetes de 76g)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 10,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-10-galletas-crema.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Brasil • Naviera: CMA-CGM • Prod: 10 días • 2,745 Cajas • $9.90/Caja",
@@ -420,7 +420,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 13,000 Kg (52,000 Paquetes de 250g)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 6,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-11-cafe-250g.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Brasil • Naviera: CMA-CGM • Prod: 10 días • 13,000 Kg • $2.37/Ud",
@@ -446,7 +446,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 40' Reefer (325,080 Huevos / 10,836 Cartones)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 9,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-12-huevos-30u.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Rep. Dominicana • Naviera: CMA-CGM • 10 días • 325,080 Uds • $0.149/Ud",
@@ -472,7 +472,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor Reefer 26,600 Kg (Cajas de 20 Kg)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 11,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-13-mdm-pollo-20kg.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Polonia • Naviera: CMA-CGM • Prod: 10 días • 26,600 Kg • $1.09/Kg",
@@ -498,7 +498,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor Reefer 27,000 Kg (Tubos de 500g)",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 14,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-14-picadillo-500g.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Polonia • Naviera: CMA-CGM • Prod: 10 días • 27,000 Kg • $0.72/Pieza",
@@ -524,7 +524,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor Reefer 77,500 Paquetes de 340g",
     unitWholesale: "CIF Mariel • Naviera CMA-CGM",
     stock: 10,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-15-salchichas-340g.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Polonia • Naviera: CMA-CGM • Prod: 10 días • 77,500 Uds • $0.76/Paq",
@@ -550,7 +550,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 25,000 Kg (1,000 Sacos de 25 Kg)",
     unitWholesale: "CIF Mariel • Naviera NIRINT",
     stock: 8,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-16-leche-25kg.jpg",
     isFlashOffer: false,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Polonia • Naviera: NIRINT • Prod: 10 días • 25,000 Kg • $3.30/Kg",
@@ -576,7 +576,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Contenedor 44,400 Latas de 400g (1,850 Cajas)",
     unitWholesale: "CIF Mariel • Naviera CTM Directo",
     stock: 9,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/wssnd-17-carne-res-lata.jpg",
     isFlashOffer: true,
     incoterm: "CIF Mariel Cuba",
     specs: "Origen: Italia • Naviera: CTM Directo • Prod: 10 días • 44,400 Latas • $1.38/Ud",
@@ -606,7 +606,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Pieza al vacío (5 lb / 2.27 kg)",
     unitWholesale: "Caja Master (40 lb / 8 piezas)",
     stock: 145,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/local-lomo-cerdo-5lb.jpg",
     isFlashOffer: true,
     incoterm: "Entrega Hoy en La Habana",
     specs: "Corte Magro • Congelación IQF • Venta Mayorista y Minorista",
@@ -632,7 +632,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Combo Completo (18.5 kg total)",
     unitWholesale: "TCP: Solo Venta Minorista",
     stock: 42,
-    image: "assets/combo-proteina.jpg",
+    image: "assets/local-combo-despensa.jpg",
     isFlashOffer: true,
     incoterm: "Domicilio en 90 min",
     specs: "5 lb Cerdo + 10 lb Pollo + 10 lb Arroz + 2L Aceite + Café + 30 Huevos",
@@ -658,7 +658,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Unidad con Garantía 1 Año en Cuba",
     unitWholesale: "Lote Mayorista (Mín. 3 uds)",
     stock: 28,
-    image: "assets/electro-hogar.jpg",
+    image: "assets/local-ecoflow-solar.jpg",
     isFlashOffer: false,
     incoterm: "Showroom Miramar",
     specs: "1800W Salida AC (110V) • Soporta Refrigerador, Ventiladores y TV",
@@ -684,7 +684,7 @@ const DEFAULT_PRODUCTS = [
     unitRetail: "Pack Ahorro 12 Piezas",
     unitWholesale: "TCP: Solo Venta Minorista",
     stock: 65,
-    image: "assets/electro-hogar.jpg",
+    image: "assets/local-aseo-hogar.jpg",
     isFlashOffer: false,
     incoterm: "Entrega Hoy en La Habana",
     specs: "Detergente 5kg + 6 Jabones + 2 Pastas Dentales + Shampoo 750ml",
@@ -734,12 +734,12 @@ function loadMercaprosState() {
     console.warn("[Mercapros] Error cargando localStorage, restaurando estado maestro:", e);
   }
   const initialState = {
-    version: "3.0.0",
-    currentRole: "ALL_VIEW", // ALL_VIEW | EXPORTADOR_B2B | MIPYME | TCP | CLIENTE_B2C
-    currency: "USD",         // USD | CUP | MLC
+    version: "3.1.0",
+    currentRole: "ALL_VIEW",
+    currency: "USD",
     rates: { USD: 1, CUP: 320, MLC: 1.15 },
-    lowDataMode: false,      // Modo Con Foto vs Sin Imágenes
-    theme: "light",          // light (#F6F1E7) | dark (#09100D)
+    lowDataMode: false,
+    theme: "light",
     selectedProvince: "La Habana",
     selectedMunicipality: "Plaza de la Revolución (El Vedado)",
     userGps: { lat: 23.1330, lng: -82.3830, address: "Calle 23 esq. L, El Vedado, La Habana" },

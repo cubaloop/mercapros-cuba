@@ -478,8 +478,8 @@ function renderCatalog() {
         </div>
       `
       : `
-        <div class="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-stone-200 dark:bg-stone-900">
-          <img src="${p.image}" alt="${p.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white border border-stone-200/70 p-2 flex items-center justify-center">
+          <img src="${p.image}" alt="${p.title}" loading="lazy" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
           <a href="https://wa.me/${vendor.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-md">
             <i class="fa-brands fa-whatsapp text-base"></i>
           </a>
