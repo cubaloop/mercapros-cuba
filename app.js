@@ -278,9 +278,9 @@ function setSaleModeFilter(mode) {
   document.querySelectorAll('.js-salemode-pill').forEach(btn => {
     const m = btn.getAttribute('data-mode');
     if (m === mode) {
-      btn.className = 'js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7C1D18] text-white shadow-sm transition-all';
+      btn.className = 'js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-[#7C1D18] text-white shadow-sm shrink-0 transition-all';
     } else {
-      btn.className = 'js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/70 transition-all';
+      btn.className = 'js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/70 shrink-0 transition-all';
     }
   });
   renderCatalog();

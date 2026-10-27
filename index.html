@@ -70,25 +70,25 @@
 </head>
 <body class="min-h-screen flex flex-col selection:bg-[#7C1D18] selection:text-white">
 
-  <!-- CABECERA LIMPIA Y DIRECTA -->
+  <!-- CABECERA LIMPIA Y DIRECTA (SOLO MENÚ, LOGO, BUSCADOR Y CARRITO) -->
   <header class="site-header sticky top-0 z-40 backdrop-blur-md bg-[#F7F5F0]/95 dark:bg-[#171413]/95 border-b border-stone-300/70 dark:border-white/10">
     <div class="header-main max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <!-- Logo & Menú Móvil -->
-      <div class="header-brand flex items-center gap-3">
-        <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')" aria-label="Abrir Menú" class="lg:hidden w-10 h-10 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/10 flex items-center justify-center">
-          <i class="fa-solid fa-bars"></i>
+      <!-- Botón de Menú + Logo Oficial -->
+      <div class="header-brand flex items-center gap-2.5">
+        <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')" aria-label="Abrir Menú" class="w-10 h-10 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 flex items-center justify-center hover:border-[#7C1D18] transition-colors">
+          <i class="fa-solid fa-bars text-base"></i>
         </button>
         <a href="#" onclick="activeVendorFilter='ALL'; selectCategory('all');" class="flex items-center gap-2.5">
-          <img src="assets/mercapros-logo.webp" alt="Mercapros Logo Oficial" class="w-11 h-11 rounded-full object-cover shadow-sm border border-stone-300 dark:border-white/15" />
+          <img src="assets/mercapros-logo.webp" alt="Mercapros Logo Oficial" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover shadow-sm border border-stone-300 dark:border-white/15" />
           <div>
-            <span class="font-display font-extrabold text-xl tracking-tight block leading-none">MERCAPROS</span>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7C1D18] dark:text-[#F2AE79] block mt-0.5">Tu Día de Compras • Cuba</span>
+            <span class="font-display font-extrabold text-lg sm:text-xl tracking-tight block leading-none">MERCAPROS</span>
+            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#7C1D18] dark:text-[#F2AE79] block mt-0.5">Tu Día de Compras • Cuba</span>
           </div>
         </a>
       </div>
 
       <!-- Buscador Principal -->
-      <div class="header-search flex-1 min-w-[210px] max-w-md relative order-last lg:order-none w-full lg:w-auto">
+      <div class="header-search flex-1 min-w-[210px] max-w-xl relative order-last lg:order-none w-full lg:w-auto">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs opacity-50"></i>
         <input
           aria-label="Buscar productos o tiendas"
@@ -99,106 +99,93 @@
         />
       </div>
 
-      <!-- Controles Rápidos: Con/Sin Fotos, Moneda, Tema, Negocios, WhatsApp y Carrito -->
+      <!-- Acción Principal en Cabecera: Solo Carrito (los demás controles viven en el Menú) -->
       <div class="header-actions flex items-center gap-2">
-        <!-- Opción Con Fotos / Sin Fotos -->
-        <button onclick="toggleLowDataMode()" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold hidden sm:flex items-center">
-          <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>Con Fotos</span>
-        </button>
-
-        <!-- Moneda -->
-        <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select px-2.5 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 text-xs font-extrabold cursor-pointer">
-          <option value="USD">USD</option>
-          <option value="CUP">CUP</option>
-          <option value="MLC">MLC</option>
-        </select>
-
-        <!-- Tema -->
-        <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-9 h-9 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 flex items-center justify-center hover:border-[#7C1D18]">
-          <i class="fa-solid fa-circle-half-stroke text-sm"></i>
-        </button>
-
-        <!-- Píldora Dorada Admin -->
-        <button id="header-admin-gold-pill" onclick="openAdminModal()" aria-label="Panel de negocios" class="hidden px-3 py-2 rounded-xl bg-gradient-to-r from-[#7C1D18] to-[#F2AE79] text-white font-extrabold text-xs shadow-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-crown"></i>
-          <span class="hidden md:inline">Admin</span>
-        </button>
-
-        <!-- Botón de Autenticación / Creación de Usuario (4 Niveles) -->
-        <button id="header-user-auth-btn" onclick="openUserAuthModal()" aria-label="Cuenta de usuario" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-user-check text-[#7C1D18] dark:text-[#F2AE79]"></i>
-          <span id="header-user-auth-label" class="hidden md:inline">Acceder / Registro</span>
-        </button>
-
-        <!-- Dashboard Negocios -->
-        <button onclick="openAdminModal()" aria-label="Panel de negocios" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-sliders text-[#7C1D18] dark:text-[#F2AE79]"></i>
-          <span class="hidden md:inline">Negocios</span>
-        </button>
-
-        <!-- Botón WhatsApp Header (SOLO ÍCONO) -->
-        <a href="https://wa.me/971508379080" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm">
-          <i class="fa-brands fa-whatsapp text-lg"></i>
-        </a>
-
-        <!-- Carrito / Ticket -->
-        <button onclick="toggleCartDrawer(true)" aria-label="Abrir carrito" class="relative px-3.5 py-2 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-[#F7F5F0] dark:text-[#171413] font-bold text-xs flex items-center gap-2 shadow-sm">
+        <button onclick="toggleCartDrawer(true)" aria-label="Abrir carrito" class="relative px-3.5 py-2 rounded-xl bg-[#7C1D18] hover:bg-[#5D1713] text-white font-bold text-xs flex items-center gap-2 shadow-sm">
           <i class="fa-solid fa-cart-shopping"></i>
-          <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-[#7C1D18] text-white text-[10px] font-extrabold">0</span>
+          <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-black/25 text-white text-[10px] font-extrabold">0</span>
         </button>
       </div>
     </div>
 
-    <!-- Barra Compacta de Nivel de Usuario -->
-    <div class="header-secondary bg-[#FFFFFF]/80 dark:bg-[#211D1B]/80 border-t border-stone-200/70 dark:border-white/5 py-1.5 px-4">
+    <!-- Barra Compacta de Ubicación y Nivel de Usuario -->
+    <div class="header-secondary bg-[#FFFFFF]/80 dark:bg-[#211D1B]/80 border-t border-stone-200/70 dark:border-white/5 py-1 px-4">
       <div class="header-secondary-inner max-w-7xl mx-auto">
-      <!-- Ubicación y Calculadora de Domicilio por Km -->
-      <div class="header-location flex items-center gap-2 bg-[#FFFFFF] dark:bg-[#211D1B] px-3 py-1.5 rounded-2xl border border-stone-300/80 dark:border-white/10 shadow-sm">
-        <i class="fa-solid fa-location-dot text-[#7C1D18] dark:text-[#F2AE79]"></i>
-        <div class="text-xs">
-          <div class="flex items-center gap-1">
-            <select id="header-province-select" onchange="onProvinceChange(this.value)" aria-label="Provincia" class="bg-transparent font-bold text-xs focus:outline-none cursor-pointer"></select>
-            <span class="opacity-40">/</span>
-            <select id="header-municipality-select" onchange="onMunicipalityChange(this.value)" aria-label="Municipio" class="bg-transparent font-bold text-xs text-[#7C1D18] dark:text-[#F2AE79] focus:outline-none cursor-pointer max-w-[150px] truncate"></select>
+        <!-- Ubicación y Calculadora de Domicilio por Km -->
+        <div class="header-location flex items-center gap-2 bg-[#FFFFFF] dark:bg-[#211D1B] px-3 py-1 rounded-2xl border border-stone-300/80 dark:border-white/10 shadow-sm">
+          <i class="fa-solid fa-location-dot text-[#7C1D18] dark:text-[#F2AE79]"></i>
+          <div class="text-xs">
+            <div class="flex items-center gap-1">
+              <select id="header-province-select" onchange="onProvinceChange(this.value)" aria-label="Provincia" class="bg-transparent font-bold text-xs focus:outline-none cursor-pointer"></select>
+              <span class="opacity-40">/</span>
+              <select id="header-municipality-select" onchange="onMunicipalityChange(this.value)" aria-label="Municipio" class="bg-transparent font-bold text-xs text-[#7C1D18] dark:text-[#F2AE79] focus:outline-none cursor-pointer max-w-[150px] truncate"></select>
+            </div>
           </div>
+          <button onclick="openDeliveryMapModal()" class="ml-1 px-2.5 py-1 rounded-xl bg-[#7C1D18]/15 hover:bg-[#7C1D18] text-[#7C1D18] dark:text-[#F2AE79] hover:text-white text-xs font-bold transition-all flex items-center gap-1" title="Ver mapa y tarifa por km">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span class="hidden sm:inline">Mapa $/km</span>
+          </button>
         </div>
-        <button onclick="openDeliveryMapModal()" class="ml-1 px-2.5 py-1 rounded-xl bg-[#7C1D18]/15 hover:bg-[#7C1D18] text-[#7C1D18] dark:text-[#F2AE79] hover:text-white text-xs font-bold transition-all flex items-center gap-1" title="Ver mapa y tarifa por km">
-          <i class="fa-solid fa-map-location-dot"></i>
-          <span class="hidden sm:inline">Mapa $/km</span>
-        </button>
-      </div>
 
-<nav aria-label="Tipo de comprador" class="customer-views flex items-center gap-2 overflow-x-auto">
-        <span class="text-[11px] font-bold opacity-60 shrink-0">Vista:</span>
-        <button data-role="ALL_VIEW" onclick="setUserRole('ALL_VIEW')" class="js-role-btn shrink-0">
-          Todo
-        </button>
-        <button data-role="EXPORTADOR_B2B" onclick="setUserRole('EXPORTADOR_B2B')" class="js-role-btn shrink-0">
-          Exportadores (Contenedores)
-        </button>
-        <button data-role="MIPYME" onclick="setUserRole('MIPYME')" class="js-role-btn shrink-0">
-          Mipymes (Mayor y Menor)
-        </button>
-        <button data-role="TCP" onclick="setUserRole('TCP')" class="js-role-btn shrink-0">
-          TCP (Minorista)
-        </button>
-        <button data-role="CLIENTE_B2C" onclick="setUserRole('CLIENTE_B2C')" class="js-role-btn shrink-0">
-          Hogar B2C
-        </button>
+        <nav aria-label="Tipo de comprador" class="customer-views flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span class="text-[11px] font-bold opacity-60 shrink-0">Vista:</span>
+          <button data-role="ALL_VIEW" onclick="setUserRole('ALL_VIEW')" class="js-role-btn shrink-0">
+            Todo
+          </button>
+          <button data-role="EXPORTADOR_B2B" onclick="setUserRole('EXPORTADOR_B2B')" class="js-role-btn shrink-0">
+            Exportadores (Contenedores)
+          </button>
+          <button data-role="MIPYME" onclick="setUserRole('MIPYME')" class="js-role-btn shrink-0">
+            Mipymes (Mayor y Menor)
+          </button>
+          <button data-role="TCP" onclick="setUserRole('TCP')" class="js-role-btn shrink-0">
+            TCP (Minorista)
+          </button>
+          <button data-role="CLIENTE_B2C" onclick="setUserRole('CLIENTE_B2C')" class="js-role-btn shrink-0">
+            Hogar B2C
+          </button>
         </nav>
       </div>
     </div>
   </header>
 
-  <!-- CONTENIDO PRINCIPAL LIMPIO (PRODUCTOS PRIMERO, TIENDAS AL FILTRAR CATEGORÍA "TIENDAS") -->
-  <main id="main-content" class="market-main flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-6">
+  <!-- CONTENIDO PRINCIPAL LIMPIO (SIN HUECOS ENTRE CINTILLOS DE CATEGORÍAS) -->
+  <main id="main-content" class="market-main flex-1 max-w-7xl w-full mx-auto px-4 py-3 space-y-4">
 
-    <!-- 1. BARRA DE CATEGORÍAS -->
-    <section class="space-y-3">
-      <div id="categories-scroll-bar" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+    <!-- BLOQUE UNIFICADO DE CINTILLOS DE NAVEGACIÓN Y FILTROS (COMPACTO Y PROFESIONAL) -->
+    <section class="unified-filters-bar rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200/90 dark:border-white/10 p-2.5 sm:p-3 shadow-sm space-y-2.5">
+      <!-- Cintillo 1: Departamentos y Categorías -->
+      <div id="categories-scroll-bar" class="flex items-center gap-2 overflow-x-auto no-scrollbar"></div>
+
+      <!-- Cintillo 2: Modalidades y Ordenamiento (Integrado sin espacio muerto) -->
+      <div class="catalog-toolbar flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-200/70 dark:border-white/10">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button data-mode="ALL" onclick="setSaleModeFilter('ALL')" class="js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-[#7C1D18] text-white shadow-sm shrink-0">
+            Todos
+          </button>
+          <button data-mode="CONTAINER_B2B" onclick="setSaleModeFilter('CONTAINER_B2B')" class="js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200/70 dark:bg-white/10 shrink-0">
+            Contenedores CIF Mariel
+          </button>
+          <button data-mode="WHOLESALE" onclick="setSaleModeFilter('WHOLESALE')" class="js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200/70 dark:bg-white/10 shrink-0">
+            Mayorista
+          </button>
+          <button data-mode="RETAIL" onclick="setSaleModeFilter('RETAIL')" class="js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200/70 dark:bg-white/10 shrink-0">
+            Minorista
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between sm:justify-end gap-3 text-xs w-full sm:w-auto pt-1 sm:pt-0">
+          <span id="catalog-results-count" class="font-bold opacity-75">21 productos</span>
+          <select id="catalog-sort-select" onchange="handleSortChange(this.value)" aria-label="Ordenar por" class="px-3 py-1.5 rounded-xl bg-[#F7F5F0] dark:bg-[#171413] border border-stone-300 dark:border-white/10 font-bold text-xs">
+            <option value="featured">Destacados</option>
+            <option value="price-asc">Menor Precio</option>
+            <option value="price-desc">Mayor Precio</option>
+          </select>
+        </div>
+      </div>
     </section>
 
-    <!-- 2. PANTALLA DE TIENDAS OFICIALES (OCULTA POR DEFECTO; ABRE AL FILTRAR CATEGORÍA "TIENDAS") -->
+    <!-- PANTALLA DE TIENDAS OFICIALES (OCULTA POR DEFECTO; ABRE SOLO AL FILTRAR CATEGORÍA "TIENDAS") -->
     <section id="stores-showcase-section" class="stores-section space-y-3 hidden">
       <div class="flex items-center justify-between">
         <h2 class="section-title font-display text-lg sm:text-xl font-bold flex items-center gap-2">
@@ -212,36 +199,10 @@
       <div id="vendors-showcase-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
     </section>
 
-    <!-- 3. CATÁLOGO DE PRODUCTOS Y CONTENEDORES -->
-    <section id="catalog-section-anchor" class="catalog-section space-y-4 pt-2">
+    <!-- CATÁLOGO DE PRODUCTOS Y CONTENEDORES -->
+    <section id="catalog-section-anchor" class="catalog-section space-y-3">
       <!-- Indicador limpio cuando se filtra una tienda específica -->
       <div id="active-store-filter-indicator" class="hidden"></div>
-
-      <div class="catalog-toolbar flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <button data-mode="ALL" onclick="setSaleModeFilter('ALL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7C1D18] text-white shadow-sm">
-            Todos
-          </button>
-          <button data-mode="CONTAINER_B2B" onclick="setSaleModeFilter('CONTAINER_B2B')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
-            Contenedores CIF Mariel
-          </button>
-          <button data-mode="WHOLESALE" onclick="setSaleModeFilter('WHOLESALE')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
-            Mayorista
-          </button>
-          <button data-mode="RETAIL" onclick="setSaleModeFilter('RETAIL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
-            Minorista
-          </button>
-        </div>
-
-        <div class="flex items-center gap-3 text-xs">
-          <span id="catalog-results-count" class="font-bold opacity-75">21 productos</span>
-          <select id="catalog-sort-select" onchange="handleSortChange(this.value)" aria-label="Ordenar por" class="px-3 py-1.5 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/10 font-bold text-xs">
-            <option value="featured">Destacados</option>
-            <option value="price-asc">Menor Precio</option>
-            <option value="price-desc">Mayor Precio</option>
-          </select>
-        </div>
-      </div>
 
       <!-- Grilla de Productos -->
       <div id="catalog-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
@@ -825,9 +786,9 @@
     </div>
   </div>
 
-  <!-- MENÚ MÓVIL LATERAL -->
+  <!-- MENÚ LATERAL COMPLETO (TODOS LOS CONTROLES RÁPIDOS Y NAVEGACIÓN) -->
   <div id="mobile-drawer" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex">
-    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] w-80 max-w-[85vw] h-full p-5 flex flex-col justify-between shadow-2xl">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] w-80 max-w-[85vw] h-full p-5 flex flex-col justify-between shadow-2xl overflow-y-auto">
       <div class="space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-white/10">
           <div class="flex items-center gap-2">
@@ -837,25 +798,61 @@
           <button onclick="document.getElementById('mobile-drawer').classList.add('hidden')" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold" aria-label="Cerrar">✕</button>
         </div>
 
-        <button onclick="toggleLowDataMode(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-[#2A2522] text-white font-bold text-xs flex items-center justify-center gap-2">
-          <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>Con Fotos</span>
-        </button>
+        <!-- Panel de Preferencias Rápidas: Con/Sin Fotos, Moneda y Tema -->
+        <div class="p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-2.5">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider opacity-60 block">Preferencias de Vista</span>
+          <button onclick="toggleLowDataMode(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-[#171413] font-bold text-xs flex items-center justify-center gap-2">
+            <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>Con Fotos</span>
+          </button>
 
-        <div class="space-y-1 text-xs font-bold">
-          <button onclick="openUserAuthModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-user-check text-[#7C1D18] w-5"></i> Iniciar Sesión / Crear Cuenta
+          <div class="grid grid-cols-2 gap-2">
+            <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select w-full px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 text-xs font-extrabold cursor-pointer text-center">
+              <option value="USD">Moneda: USD</option>
+              <option value="CUP">Moneda: CUP</option>
+              <option value="MLC">Moneda: MLC</option>
+            </select>
+
+            <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-full px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 text-xs font-bold flex items-center justify-center gap-1.5 hover:border-[#7C1D18]">
+              <i class="fa-solid fa-circle-half-stroke text-[#7C1D18] dark:text-[#F2AE79]"></i>
+              <span>Tema</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuenta de Usuario y Panel de Negocios -->
+        <div class="space-y-1.5 text-xs font-bold">
+          <button id="header-user-auth-btn" onclick="openUserAuthModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl bg-[#7C1D18]/10 hover:bg-[#7C1D18] text-[#7C1D18] dark:text-[#F2AE79] hover:text-white flex items-center gap-2.5 transition-all">
+            <i class="fa-solid fa-user-check w-5 text-center"></i>
+            <span id="header-user-auth-label">Acceder / Registro (4 Niveles)</span>
           </button>
-          <button onclick="selectCategory('tiendas'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-store text-[#7C1D18] w-5"></i> Tiendas Oficiales
+
+          <button id="header-admin-gold-pill" onclick="openAdminModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="hidden w-full text-left px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#7C1D18] to-[#F2AE79] text-white font-extrabold flex items-center gap-2.5 shadow-sm">
+            <i class="fa-solid fa-crown w-5 text-center"></i>
+            <span>Mi Dashboard Activo</span>
           </button>
-          <button onclick="selectCategory('contenedores-b2b'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-ship text-emerald-700 w-5"></i> Contenedores CIF Mariel
+
+          <button onclick="openAdminModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2.5">
+            <i class="fa-solid fa-sliders text-[#7C1D18] dark:text-[#F2AE79] w-5 text-center"></i>
+            <span>Panel de Negocios</span>
           </button>
-          <button onclick="openDeliveryMapModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-[#7C1D18] w-5"></i> Mapa de Domicilio $/Km
+
+          <div class="my-2 border-t border-stone-200 dark:border-white/10"></div>
+
+          <button onclick="activeVendorFilter='ALL'; selectCategory('all'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2.5">
+            <i class="fa-solid fa-layer-group text-[#7C1D18] dark:text-[#F2AE79] w-5 text-center"></i>
+            <span>Todo el Catálogo</span>
           </button>
-          <button onclick="openAdminModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-[#7C1D18] w-5"></i> Panel de Negocios
+          <button onclick="selectCategory('tiendas'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2.5">
+            <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79] w-5 text-center"></i>
+            <span>Tiendas Oficiales</span>
+          </button>
+          <button onclick="selectCategory('contenedores-b2b'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2.5">
+            <i class="fa-solid fa-ship text-emerald-700 w-5 text-center"></i>
+            <span>Contenedores CIF Mariel</span>
+          </button>
+          <button onclick="openDeliveryMapModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2.5">
+            <i class="fa-solid fa-map-location-dot text-[#7C1D18] dark:text-[#F2AE79] w-5 text-center"></i>
+            <span>Mapa de Domicilio $/Km</span>
           </button>
         </div>
       </div>
