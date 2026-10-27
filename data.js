@@ -2,7 +2,7 @@
 // MERCAPROS CUBA - MOTOR DE DATOS DUAL-LAYER (LOCALSTORAGE + SUPABASE)
 // ============================================================================
 
-const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v32_auth_db';
+const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v35_currency_db';
 
 // Provincias y Municipios de Cuba con Coordenadas GPS Reales para Enrutamiento Haversine
 const CUBA_GEO = {

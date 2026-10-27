@@ -111,13 +111,29 @@ function calculateVendorDelivery(vendor) {
   };
 }
 
+function isProductWholesaleOnly(p) {
+  if (!p) return false;
+  const modes = Array.isArray(p.saleModes) ? p.saleModes : [];
+  return Boolean(
+    p.isContainerOffer ||
+    modes.includes('CONTAINER_B2B') ||
+    !modes.includes('RETAIL')
+  );
+}
+
 function isWholesaleContext() {
+  const selectedVendor = activeVendorFilter !== 'ALL'
+    ? (appState.vendors || []).find(v => v.id === activeVendorFilter)
+    : null;
+  const isB2BVendorSelected = Boolean(selectedVendor && selectedVendor.role === 'EXPORTADOR_B2B');
+
   return (
     activeSaleFilter === 'WHOLESALE' ||
     activeSaleFilter === 'CONTAINER_B2B' ||
     activeCategory === 'contenedores-b2b' ||
     appState.currentRole === 'EXPORTADOR_B2B' ||
-    appState.currentRole === 'MIPYME'
+    appState.currentRole === 'MIPYME' ||
+    isB2BVendorSelected
   );
 }
 
@@ -380,6 +396,7 @@ function toggleCatalogFilterPanel(forceState) {
 
 function setVendorFilterFromPanel(vendorId) {
   activeVendorFilter = vendorId || 'ALL';
+  syncCurrencySelectorOptions();
   syncFilterPanelUI();
   renderStoresSection();
   renderCatalog();
@@ -531,6 +548,7 @@ function filterByVendor(vendorId) {
   } else {
     activeVendorFilter = vendorId;
   }
+  syncCurrencySelectorOptions();
   renderStoresSection();
   renderCatalog();
   const catGrid = document.getElementById('catalog-section-anchor');
@@ -548,6 +566,8 @@ function renderCatalog() {
   const activeStoreBanner = document.getElementById('active-store-filter-indicator');
   if (!grid) return;
 
+  syncCurrencySelectorOptions();
+
   const role = ROLE_MATRIX[appState.currentRole] || ROLE_MATRIX.ALL_VIEW;
   const effectiveVendorFilter = activeVendorFilter;
 
@@ -561,7 +581,7 @@ function renderCatalog() {
             <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79]"></i>
             <span>Mostrando productos de: <strong>${vObj ? vObj.name : ''}</strong></span>
           </div>
-          <button onclick="activeVendorFilter='ALL'; renderStoresSection(); renderCatalog();" class="font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
+          <button onclick="activeVendorFilter='ALL'; syncCurrencySelectorOptions(); renderStoresSection(); renderCatalog();" class="font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
             Ver todos los productos
           </button>
         </div>
@@ -573,6 +593,11 @@ function renderCatalog() {
   }
 
   let filtered = appState.products.filter(p => {
+    // Los productos exclusivos de compra mayorista o por contenedor NO están disponibles en CUP
+    if (appState.currency === 'CUP' && isProductWholesaleOnly(p)) {
+      return false;
+    }
+
     if (activeCategory !== 'all' && activeCategory !== 'tiendas') {
       if (activeCategory === 'contenedores-b2b') {
         if (!p.isContainerOffer && !p.saleModes.includes('CONTAINER_B2B')) return false;
@@ -621,7 +646,7 @@ function renderCatalog() {
   }
 
   grid.innerHTML = filtered.map(p => {
-    const isContainerItem = p.saleModes.includes('CONTAINER_B2B');
+    const isContainerItem = Boolean(p.isContainerOffer || p.saleModes.includes('CONTAINER_B2B'));
     const hasWholesale = p.saleModes.includes('WHOLESALE');
     const hasRetail = p.saleModes.includes('RETAIL');
 
@@ -629,19 +654,20 @@ function renderCatalog() {
     const canBuyThisWholesale = hasWholesale && role.canBuyWholesale;
     const canBuyThisRetail = hasRetail && role.canBuyRetail;
 
-    const showWholesalePrimary = !isContainerItem && activeSaleFilter === 'WHOLESALE' && hasWholesale;
+    const showWholesalePrimary = !isContainerItem && (activeSaleFilter === 'WHOLESALE' || !hasRetail) && hasWholesale;
     const primaryPriceUsd = isContainerItem
       ? p.priceContainerUsd
       : showWholesalePrimary
       ? p.priceWholesaleUsd
       : p.priceRetailUsd;
-    const isPrimaryWholesaleOrB2B = isContainerItem || showWholesalePrimary;
+    const isPrimaryWholesaleOrB2B = isContainerItem || showWholesalePrimary || !hasRetail;
 
+    const showWholesaleSubText = hasWholesale && appState.currency !== 'CUP';
     const primaryUnitText = isContainerItem
       ? `${p.unitRetail}${p.unitPriceLabel ? ` • ${p.unitPriceLabel}` : ''}`
       : showWholesalePrimary
       ? `${p.unitWholesale} (Mín. ${p.minWholesaleQty || 1}+)`
-      : `${p.unitRetail}${hasWholesale ? ` • Mayor: ${formatMoney(p.priceWholesaleUsd, true)} (${p.unitWholesale})` : ''}`;
+      : `${p.unitRetail}${showWholesaleSubText ? ` • Mayor: ${formatMoney(p.priceWholesaleUsd, true)} (${p.unitWholesale})` : ''}`;
 
     // Foto sin botón de WhatsApp; al hacer clic abre la pantalla independiente del producto
     const mediaHtml = appState.lowDataMode
