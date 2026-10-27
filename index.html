@@ -44,31 +44,16 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            display: ['Fraunces', 'Georgia', 'serif'],
-            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
-          }
-        }
-      }
-    };
-  </script>
-
+  <link rel="stylesheet" href="styles.css" />
   <style>
     body {
-      background-color: #F6F1E7;
-      color: #14201B;
+      background-color: #F7F5F0;
+      color: #2A2522;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      overflow-x: hidden;
+      overflow-wrap: break-word;
     }
     html.dark body {
-      background-color: #09100D;
+      background-color: #171413;
       color: #F2EDE0;
     }
     .no-scrollbar::-webkit-scrollbar {
@@ -83,80 +68,65 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-[#7A5A1E] selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-[#7C1D18] selection:text-white">
 
   <!-- CABECERA LIMPIA Y DIRECTA -->
-  <header class="sticky top-0 z-40 backdrop-blur-md bg-[#F6F1E7]/95 dark:bg-[#09100D]/95 border-b border-stone-300/70 dark:border-white/10">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+  <header class="site-header sticky top-0 z-40 backdrop-blur-md bg-[#F7F5F0]/95 dark:bg-[#171413]/95 border-b border-stone-300/70 dark:border-white/10">
+    <div class="header-main max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <!-- Logo & Menú Móvil -->
-      <div class="flex items-center gap-3">
-        <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')" aria-label="Abrir Menú" class="lg:hidden w-10 h-10 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/10 flex items-center justify-center">
+      <div class="header-brand flex items-center gap-3">
+        <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')" aria-label="Abrir Menú" class="lg:hidden w-10 h-10 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/10 flex items-center justify-center">
           <i class="fa-solid fa-bars"></i>
         </button>
         <a href="#" onclick="activeVendorFilter='ALL'; selectCategory('all');" class="flex items-center gap-2.5">
           <img src="assets/mercapros-logo.webp" alt="Mercapros Logo Oficial" class="w-11 h-11 rounded-full object-cover shadow-sm border border-stone-300 dark:border-white/15" />
           <div>
             <span class="font-display font-extrabold text-xl tracking-tight block leading-none">MERCAPROS</span>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7A5A1E] dark:text-[#D9B76F] block mt-0.5">Tu Día de Compras • Cuba</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7C1D18] dark:text-[#F2AE79] block mt-0.5">Tu Día de Compras • Cuba</span>
           </div>
         </a>
       </div>
 
-      <!-- Ubicación y Calculadora de Domicilio por Km -->
-      <div class="flex items-center gap-2 bg-[#FFFDF8] dark:bg-[#121D18] px-3 py-1.5 rounded-2xl border border-stone-300/80 dark:border-white/10 shadow-sm">
-        <i class="fa-solid fa-location-dot text-[#7A5A1E] dark:text-[#D9B76F]"></i>
-        <div class="text-xs">
-          <div class="flex items-center gap-1">
-            <select id="header-province-select" onchange="onProvinceChange(this.value)" aria-label="Provincia" class="bg-transparent font-bold text-xs focus:outline-none cursor-pointer"></select>
-            <span class="opacity-40">/</span>
-            <select id="header-municipality-select" onchange="onMunicipalityChange(this.value)" aria-label="Municipio" class="bg-transparent font-bold text-xs text-[#7A5A1E] dark:text-[#D9B76F] focus:outline-none cursor-pointer max-w-[150px] truncate"></select>
-          </div>
-        </div>
-        <button onclick="openDeliveryMapModal()" class="ml-1 px-2.5 py-1 rounded-xl bg-[#7A5A1E]/15 hover:bg-[#7A5A1E] text-[#7A5A1E] dark:text-[#D9B76F] hover:text-white text-xs font-bold transition-all flex items-center gap-1" title="Ver mapa y tarifa por km">
-          <i class="fa-solid fa-map-location-dot"></i>
-          <span class="hidden sm:inline">Mapa $/km</span>
-        </button>
-      </div>
-
       <!-- Buscador Principal -->
-      <div class="flex-1 min-w-[210px] max-w-md relative order-last lg:order-none w-full lg:w-auto">
+      <div class="header-search flex-1 min-w-[210px] max-w-md relative order-last lg:order-none w-full lg:w-auto">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs opacity-50"></i>
         <input
+          aria-label="Buscar productos o tiendas"
           type="search"
           oninput="handleSearchInput(this.value)"
           placeholder="Buscar en WSSND SKYLINK, harina, arroz, pollo, aceite..."
-          class="w-full pl-9 pr-4 py-2 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#7A5A1E]"
+          class="w-full pl-9 pr-4 py-2 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#7C1D18]"
         />
       </div>
 
       <!-- Controles Rápidos: Con/Sin Fotos, Moneda, Tema, Negocios, WhatsApp y Carrito -->
-      <div class="flex items-center gap-2">
+      <div class="header-actions flex items-center gap-2">
         <!-- Opción Con Fotos / Sin Fotos -->
-        <button onclick="toggleLowDataMode()" class="px-3 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 hover:border-[#7A5A1E] text-xs font-bold hidden sm:flex items-center">
+        <button onclick="toggleLowDataMode()" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold hidden sm:flex items-center">
           <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>Con Fotos</span>
         </button>
 
         <!-- Moneda -->
-        <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select px-2.5 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 text-xs font-extrabold cursor-pointer">
+        <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select px-2.5 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 text-xs font-extrabold cursor-pointer">
           <option value="USD">USD</option>
           <option value="CUP">CUP</option>
           <option value="MLC">MLC</option>
         </select>
 
         <!-- Tema -->
-        <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-9 h-9 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 flex items-center justify-center hover:border-[#7A5A1E]">
+        <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-9 h-9 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 flex items-center justify-center hover:border-[#7C1D18]">
           <i class="fa-solid fa-circle-half-stroke text-sm"></i>
         </button>
 
         <!-- Píldora Dorada Admin -->
-        <button id="header-admin-gold-pill" onclick="openAdminModal()" class="hidden px-3 py-2 rounded-xl bg-gradient-to-r from-[#7A5A1E] to-[#D9B76F] text-white font-extrabold text-xs shadow-sm flex items-center gap-1.5">
+        <button id="header-admin-gold-pill" onclick="openAdminModal()" aria-label="Panel de negocios" class="hidden px-3 py-2 rounded-xl bg-gradient-to-r from-[#7C1D18] to-[#F2AE79] text-white font-extrabold text-xs shadow-sm flex items-center gap-1.5">
           <i class="fa-solid fa-crown"></i>
           <span class="hidden md:inline">Admin</span>
         </button>
 
         <!-- Dashboard Negocios -->
-        <button onclick="openAdminModal()" class="px-3 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300/80 dark:border-white/10 hover:border-[#7A5A1E] text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-sliders text-[#7A5A1E] dark:text-[#D9B76F]"></i>
+        <button onclick="openAdminModal()" aria-label="Panel de negocios" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-sliders text-[#7C1D18] dark:text-[#F2AE79]"></i>
           <span class="hidden md:inline">Negocios</span>
         </button>
 
@@ -166,16 +136,33 @@
         </a>
 
         <!-- Carrito / Ticket -->
-        <button onclick="toggleCartDrawer(true)" class="relative px-3.5 py-2 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-[#F6F1E7] dark:text-[#09100D] font-bold text-xs flex items-center gap-2 shadow-sm">
+        <button onclick="toggleCartDrawer(true)" aria-label="Abrir carrito" class="relative px-3.5 py-2 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-[#F7F5F0] dark:text-[#171413] font-bold text-xs flex items-center gap-2 shadow-sm">
           <i class="fa-solid fa-bag-shopping"></i>
-          <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-[#7A5A1E] text-white text-[10px] font-extrabold">0</span>
+          <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-[#7C1D18] text-white text-[10px] font-extrabold">0</span>
         </button>
       </div>
     </div>
 
     <!-- Barra Compacta de Nivel de Usuario -->
-    <div class="bg-[#FFFDF8]/80 dark:bg-[#121D18]/80 border-t border-stone-200/70 dark:border-white/5 py-1.5 px-4">
-      <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+    <div class="header-secondary bg-[#FFFFFF]/80 dark:bg-[#211D1B]/80 border-t border-stone-200/70 dark:border-white/5 py-1.5 px-4">
+      <div class="header-secondary-inner max-w-7xl mx-auto">
+      <!-- Ubicación y Calculadora de Domicilio por Km -->
+      <div class="header-location flex items-center gap-2 bg-[#FFFFFF] dark:bg-[#211D1B] px-3 py-1.5 rounded-2xl border border-stone-300/80 dark:border-white/10 shadow-sm">
+        <i class="fa-solid fa-location-dot text-[#7C1D18] dark:text-[#F2AE79]"></i>
+        <div class="text-xs">
+          <div class="flex items-center gap-1">
+            <select id="header-province-select" onchange="onProvinceChange(this.value)" aria-label="Provincia" class="bg-transparent font-bold text-xs focus:outline-none cursor-pointer"></select>
+            <span class="opacity-40">/</span>
+            <select id="header-municipality-select" onchange="onMunicipalityChange(this.value)" aria-label="Municipio" class="bg-transparent font-bold text-xs text-[#7C1D18] dark:text-[#F2AE79] focus:outline-none cursor-pointer max-w-[150px] truncate"></select>
+          </div>
+        </div>
+        <button onclick="openDeliveryMapModal()" class="ml-1 px-2.5 py-1 rounded-xl bg-[#7C1D18]/15 hover:bg-[#7C1D18] text-[#7C1D18] dark:text-[#F2AE79] hover:text-white text-xs font-bold transition-all flex items-center gap-1" title="Ver mapa y tarifa por km">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span class="hidden sm:inline">Mapa $/km</span>
+        </button>
+      </div>
+
+<nav aria-label="Tipo de comprador" class="customer-views flex items-center gap-2 overflow-x-auto">
         <span class="text-[11px] font-bold opacity-60 shrink-0">Vista:</span>
         <button data-role="ALL_VIEW" onclick="setUserRole('ALL_VIEW')" class="js-role-btn shrink-0">
           Todo
@@ -192,12 +179,13 @@
         <button data-role="CLIENTE_B2C" onclick="setUserRole('CLIENTE_B2C')" class="js-role-btn shrink-0">
           Hogar B2C
         </button>
+        </nav>
       </div>
     </div>
   </header>
 
   <!-- CONTENIDO PRINCIPAL LIMPIO -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-6">
+  <main id="main-content" class="market-main flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-6">
 
     <!-- 1. BARRA DE CATEGORÍAS (CON "TIENDAS" DESTACADA) -->
     <section class="space-y-3">
@@ -205,13 +193,13 @@
     </section>
 
     <!-- 2. SECCIÓN DE TIENDAS OFICIALES (WSSND SKYLINK PRIMERA TIENDA) -->
-    <section id="stores-showcase-section" class="space-y-3">
+    <section id="stores-showcase-section" class="stores-section space-y-3">
       <div class="flex items-center justify-between">
-        <h2 class="font-display text-lg sm:text-xl font-bold flex items-center gap-2">
-          <i class="fa-solid fa-store text-[#7A5A1E] dark:text-[#D9B76F] text-base"></i>
+        <h2 class="section-title font-display text-lg sm:text-xl font-bold flex items-center gap-2">
+          <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79] text-base"></i>
           <span>Tiendas Oficiales</span>
         </h2>
-        <button onclick="activeVendorFilter='v-wssnd-01'; renderStoresSection(); renderCatalog();" class="text-xs font-bold text-[#7A5A1E] dark:text-[#D9B76F] hover:underline">
+        <button onclick="activeVendorFilter='v-wssnd-01'; renderStoresSection(); renderCatalog();" class="text-xs font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
           Ver los 17 Contenedores de WSSND SKYLINK →
         </button>
       </div>
@@ -219,13 +207,13 @@
     </section>
 
     <!-- 3. CATÁLOGO DE PRODUCTOS Y CONTENEDORES -->
-    <section id="catalog-section-anchor" class="space-y-4 pt-2">
+    <section id="catalog-section-anchor" class="catalog-section space-y-4 pt-2">
       <!-- Indicador limpio cuando se filtra una tienda específica -->
       <div id="active-store-filter-indicator" class="hidden"></div>
 
-      <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
+      <div class="catalog-toolbar flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
         <div class="flex flex-wrap items-center gap-1.5">
-          <button data-mode="ALL" onclick="setSaleModeFilter('ALL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7A5A1E] text-white shadow-sm">
+          <button data-mode="ALL" onclick="setSaleModeFilter('ALL')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7C1D18] text-white shadow-sm">
             Todos
           </button>
           <button data-mode="CONTAINER_B2B" onclick="setSaleModeFilter('CONTAINER_B2B')" class="js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10">
@@ -241,7 +229,7 @@
 
         <div class="flex items-center gap-3 text-xs">
           <span id="catalog-results-count" class="font-bold opacity-75">21 productos</span>
-          <select id="catalog-sort-select" onchange="handleSortChange(this.value)" aria-label="Ordenar por" class="px-3 py-1.5 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/10 font-bold text-xs">
+          <select id="catalog-sort-select" onchange="handleSortChange(this.value)" aria-label="Ordenar por" class="px-3 py-1.5 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/10 font-bold text-xs">
             <option value="featured">Destacados</option>
             <option value="price-asc">Menor Precio</option>
             <option value="price-desc">Mayor Precio</option>
@@ -255,11 +243,11 @@
   </main>
 
   <!-- MODAL DE MAPA INTERACTIVO GPS Y CALCULADORA DE DOMICILIO POR KILÓMETRO -->
-  <div id="delivery-map-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-    <div class="bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-6 space-y-4">
+  <div id="delivery-map-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
         <h3 class="font-display text-lg font-bold">Mapa de Entrega y Tarifa por Kilómetro</h3>
-        <button onclick="closeDeliveryMapModal()" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 flex items-center justify-center font-bold">✕</button>
+        <button onclick="closeDeliveryMapModal()" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 flex items-center justify-center font-bold" aria-label="Cerrar">✕</button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -298,7 +286,7 @@
             </div>
           </div>
 
-          <button onclick="saveCustomUserAddress()" class="w-full py-3 rounded-2xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-extrabold text-xs shadow-md transition-all">
+          <button onclick="saveCustomUserAddress()" class="w-full py-3 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs shadow-md transition-all">
             Guardar Ubicación
           </button>
         </div>
@@ -307,11 +295,11 @@
   </div>
 
   <!-- MODAL DE INICIO DE SESIÓN DE ADMINISTRADOR / NEGOCIO -->
-  <div id="admin-login-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+  <div id="admin-login-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between">
         <h3 class="font-display text-xl font-bold">Acceso Panel de Negocios</h3>
-        <button onclick="closeAdminModals()" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">✕</button>
+        <button onclick="closeAdminModals()" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold" aria-label="Cerrar">✕</button>
       </div>
       <form onsubmit="handleAdminLogin(event)" class="space-y-3 text-xs">
         <div>
@@ -327,7 +315,7 @@
             <option value="v-mip-02">Mipyme: ElectroHabana Solar S.R.L. (Mayor y Menor)</option>
           </select>
         </div>
-        <button type="submit" class="w-full py-3 rounded-2xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-[#09100D] font-extrabold text-xs shadow-md">
+        <button type="submit" class="w-full py-3 rounded-2xl bg-[#2A2522] dark:bg-[#F2AE79] text-white dark:text-[#171413] font-extrabold text-xs shadow-md">
           Entrar al Dashboard
         </button>
       </form>
@@ -335,29 +323,29 @@
   </div>
 
   <!-- DASHBOARD ADMINISTRADOR MÓVIL (5 PESTAÑAS) -->
-  <div id="admin-dashboard-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5">
-    <div class="bg-[#F6F1E7] dark:bg-[#09100D] border border-stone-300 dark:border-white/15 rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-y-auto shadow-2xl p-4 sm:p-6 space-y-4">
+  <div id="admin-dashboard-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5">
+    <div class="bg-[#F7F5F0] dark:bg-[#171413] border border-stone-300 dark:border-white/15 rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-y-auto shadow-2xl p-4 sm:p-6 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-300 dark:border-white/10">
         <div class="flex items-center gap-2.5">
-          <span class="w-9 h-9 rounded-2xl bg-[#7A5A1E] text-white flex items-center justify-center">
+          <span class="w-9 h-9 rounded-2xl bg-[#7C1D18] text-white flex items-center justify-center">
             <i class="fa-solid fa-sliders"></i>
           </span>
           <h3 class="font-display text-lg font-bold">Dashboard de Inventario y Configuración</h3>
         </div>
         <div class="flex items-center gap-2">
-          <select id="admin-active-vendor-select" onchange="switchAdminVendorProfile(this.value)" class="px-3 py-2 rounded-xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-300 dark:border-white/15 text-xs font-bold">
+          <select id="admin-active-vendor-select" onchange="switchAdminVendorProfile(this.value)" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 text-xs font-bold">
             <option value="v-wssnd-01">Exportador: WSSND SKYLINK</option>
             <option value="v-mip-01">Mipyme: Alimentos Del Valle</option>
             <option value="v-tcp-01">TCP: Mercadito La Víbora</option>
             <option value="v-mip-02">Mipyme: ElectroHabana Solar</option>
           </select>
-          <button onclick="closeAdminModals()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 font-bold">✕</button>
+          <button onclick="closeAdminModals()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 font-bold" aria-label="Cerrar">✕</button>
         </div>
       </div>
 
       <!-- Las 5 Pestañas -->
       <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-        <button data-tab="tab-catalog" onclick="switchAdminTab('tab-catalog')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-2 shrink-0">
+        <button data-tab="tab-catalog" onclick="switchAdminTab('tab-catalog')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2A2522] text-[#F7F5F0] dark:bg-[#F2AE79] dark:text-[#171413] shadow-sm flex items-center gap-2 shrink-0">
           <i class="fa-solid fa-boxes-stacked"></i> 1. Catálogo
         </button>
         <button data-tab="tab-promos" onclick="switchAdminTab('tab-promos')" class="js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 flex items-center gap-2 shrink-0">
@@ -376,7 +364,7 @@
 
       <!-- PESTAÑA 1: CATÁLOGO CRUD + MOTOR HTML5 CANVAS -->
       <div id="tab-catalog" class="js-admin-tab-panel grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <form id="admin-product-form" onsubmit="saveProductFromAdmin(event)" class="lg:col-span-5 p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3 text-xs">
+        <form id="admin-product-form" onsubmit="saveProductFromAdmin(event)" class="lg:col-span-5 p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10 space-y-3 text-xs">
           <h4 class="font-display font-bold text-base">Agregar / Editar Producto</h4>
           <div class="grid grid-cols-2 gap-2">
             <div class="col-span-2">
@@ -404,7 +392,7 @@
               <label class="font-bold block">Precio Mayorista (USD):</label>
               <input id="prod-wholesale-input" type="number" step="0.01" placeholder="85.00" class="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
               <input id="prod-unitwholesale-input" type="text" placeholder="Ej: Caja Master" class="w-full mt-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 text-[11px]" />
-              <span id="prod-wholesale-Note" class="text-[10px] font-bold text-[#7A5A1E] block mt-1"></span>
+              <span id="prod-wholesale-Note" class="text-[10px] font-bold text-[#7C1D18] block mt-1"></span>
             </div>
           </div>
 
@@ -437,7 +425,7 @@
           <!-- Carga de Fotos con Compresión HTML5 Canvas -->
           <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-dashed border-stone-300 dark:border-white/20 space-y-2">
             <label class="font-bold block text-xs">
-              <i class="fa-solid fa-camera-retro text-[#7A5A1E] mr-1"></i>Subir Foto desde el Celular (Compresión Canvas):
+              <i class="fa-solid fa-camera-retro text-[#7C1D18] mr-1"></i>Subir Foto desde el Celular (Compresión Canvas):
             </label>
             <input type="file" accept="image/*" onchange="handleProductPhotoUpload(event)" class="w-full text-[11px]" />
             <input id="prod-image-dataurl" type="hidden" value="assets/combo-proteina.jpg" />
@@ -445,12 +433,12 @@
           </div>
 
           <label class="flex items-center gap-2 font-bold cursor-pointer">
-            <input id="prod-flash-checkbox" type="checkbox" class="rounded text-[#7A5A1E]" />
+            <input id="prod-flash-checkbox" type="checkbox" class="rounded text-[#7C1D18]" />
             <span>Destacar en Ofertas</span>
           </label>
 
           <div class="flex gap-2 pt-1">
-            <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-[#09100D] font-extrabold">
+            <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-white dark:text-[#171413] font-extrabold">
               Guardar Producto
             </button>
             <button type="button" onclick="resetProductForm()" class="px-3 py-2.5 rounded-xl bg-stone-200 dark:bg-white/10 font-bold">
@@ -467,7 +455,7 @@
 
       <!-- PESTAÑA 2: ANUNCIOS Y PROMOCIONES -->
       <div id="tab-promos" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-        <form onsubmit="addAnnouncementFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+        <form onsubmit="addAnnouncementFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10 space-y-3">
           <h4 class="font-display font-bold text-base">Nueva Promoción</h4>
           <input id="ann-title-input" type="text" required placeholder="Título de la promoción" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
           <input id="ann-subtitle-input" type="text" required placeholder="Descripción" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
@@ -475,7 +463,7 @@
             <input id="ann-badge-input" type="text" placeholder="Etiqueta" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
             <input id="ann-code-input" type="text" placeholder="Código" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
           </div>
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-extrabold">
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-white dark:text-black font-extrabold">
             Guardar Promoción
           </button>
         </form>
@@ -484,11 +472,11 @@
 
       <!-- PESTAÑA 3: CATEGORÍAS -->
       <div id="tab-categories" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-        <form onsubmit="addCategoryFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+        <form onsubmit="addCategoryFromAdmin(event)" class="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10 space-y-3">
           <h4 class="font-display font-bold text-base">Agregar Categoría</h4>
           <input id="cat-name-input" type="text" required placeholder="Nombre de la Categoría" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
           <input id="cat-icon-input" type="text" value="fa-box" placeholder="Ícono FontAwesome" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-extrabold">
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-white dark:text-black font-extrabold">
             Crear Categoría
           </button>
         </form>
@@ -503,7 +491,7 @@
 
       <!-- PESTAÑA 5: TARIFA POR KM, SUPABASE Y BACKUP JSON -->
       <div id="tab-settings" class="js-admin-tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-        <form onsubmit="saveVendorLogisticsConfig(event)" class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-3">
+        <form onsubmit="saveVendorLogisticsConfig(event)" class="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10 space-y-3">
           <h4 class="font-display font-bold text-base">Configurar Precio por Km (Mipyme / TCP)</h4>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -525,17 +513,17 @@
               <input id="vendor-cfg-lng" type="number" step="0.0001" required class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-mono" />
             </div>
           </div>
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#7A5A1E] text-white font-extrabold">
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-[#7C1D18] text-white font-extrabold">
             Guardar Tarifa por Km
           </button>
         </form>
 
-        <div class="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10 space-y-4">
+        <div class="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10 space-y-4">
           <form onsubmit="saveSupabaseCredentials(event)" class="space-y-2.5">
             <h4 class="font-display font-bold text-base">Conexión Supabase & Respaldo JSON</h4>
             <input id="supabase-url-input" type="url" placeholder="https://tu-proyecto.supabase.co" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
             <input id="supabase-key-input" type="password" placeholder="Supabase Anon Key" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
-            <button type="submit" class="w-full py-2 rounded-xl bg-[#14201B] dark:bg-[#D9B76F] text-white dark:text-black font-bold">
+            <button type="submit" class="w-full py-2 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-white dark:text-black font-bold">
               Conectar Supabase
             </button>
           </form>
@@ -555,15 +543,15 @@
   </div>
 
   <!-- DRAWER DEL CARRITO (GENERACIÓN Y ENVÍO DE TICKET DE COMPRA AL WHATSAPP) -->
-  <div id="cart-drawer-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
-    <div class="bg-[#FFFDF8] dark:bg-[#121D18] w-full max-w-md h-full p-5 flex flex-col justify-between shadow-2xl border-l border-stone-200 dark:border-white/10 overflow-y-auto">
+  <div id="cart-drawer-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] w-full max-w-md h-full p-5 flex flex-col justify-between shadow-2xl border-l border-stone-200 dark:border-white/10 overflow-y-auto">
       <div class="space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-white/10">
           <div>
             <h3 class="font-display text-lg font-bold">Ticket de Pedido</h3>
             <p class="text-[11px] opacity-75">Revisa tu selección para enviar el ticket de compra</p>
           </div>
-          <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">✕</button>
+          <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold" aria-label="Cerrar">✕</button>
         </div>
 
         <div id="cart-items-list" class="space-y-2.5 max-h-[45vh] overflow-y-auto pr-1"></div>
@@ -573,7 +561,7 @@
       <div class="space-y-2.5 pt-4 border-t border-stone-200 dark:border-white/10 text-xs">
         <input id="checkout-customer-name" type="text" placeholder="Nombre del Comprador o Empresa (Mipyme / TCP)" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
         <input id="checkout-customer-notes" type="text" placeholder="Notas del pedido (Puerto, teléfono o referencia)" class="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
-        <button onclick="submitCheckoutOrder()" class="w-full py-3.5 rounded-2xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-extrabold text-xs shadow-lg transition-all">
+        <button onclick="submitCheckoutOrder()" class="w-full py-3.5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs shadow-lg transition-all">
           Comprar
         </button>
       </div>
@@ -581,33 +569,33 @@
   </div>
 
   <!-- MENÚ MÓVIL LATERAL -->
-  <div id="mobile-drawer" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex">
-    <div class="bg-[#FFFDF8] dark:bg-[#121D18] w-80 max-w-[85vw] h-full p-5 flex flex-col justify-between shadow-2xl">
+  <div id="mobile-drawer" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] w-80 max-w-[85vw] h-full p-5 flex flex-col justify-between shadow-2xl">
       <div class="space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-white/10">
           <div class="flex items-center gap-2">
             <img src="assets/mercapros-logo.webp" alt="Mercapros Logo" class="w-8 h-8 rounded-full object-cover border border-stone-300 dark:border-white/15" />
             <span class="font-display font-extrabold text-lg">MERCAPROS</span>
           </div>
-          <button onclick="document.getElementById('mobile-drawer').classList.add('hidden')" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold">✕</button>
+          <button onclick="document.getElementById('mobile-drawer').classList.add('hidden')" class="w-8 h-8 rounded-full bg-stone-200 dark:bg-white/10 font-bold" aria-label="Cerrar">✕</button>
         </div>
 
-        <button onclick="toggleLowDataMode(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-[#14201B] text-white font-bold text-xs flex items-center justify-center gap-2">
+        <button onclick="toggleLowDataMode(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full py-2.5 px-3 rounded-xl bg-[#2A2522] text-white font-bold text-xs flex items-center justify-center gap-2">
           <span class="js-lowdata-toggle-label"><i class="fa-regular fa-image mr-1.5"></i>Con Fotos</span>
         </button>
 
         <div class="space-y-1 text-xs font-bold">
           <button onclick="selectCategory('tiendas'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-store text-[#7A5A1E] w-5"></i> Tiendas (WSSND SKYLINK)
+            <i class="fa-solid fa-store text-[#7C1D18] w-5"></i> Tiendas (WSSND SKYLINK)
           </button>
           <button onclick="selectCategory('contenedores-b2b'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
             <i class="fa-solid fa-ship text-emerald-700 w-5"></i> Contenedores CIF Mariel
           </button>
           <button onclick="openDeliveryMapModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-[#7A5A1E] w-5"></i> Mapa de Domicilio $/Km
+            <i class="fa-solid fa-map-location-dot text-[#7C1D18] w-5"></i> Mapa de Domicilio $/Km
           </button>
           <button onclick="openAdminModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-[#7A5A1E] w-5"></i> Panel de Negocios
+            <i class="fa-solid fa-sliders text-[#7C1D18] w-5"></i> Panel de Negocios
           </button>
         </div>
       </div>
@@ -628,19 +616,19 @@
     target="_blank"
     rel="noopener"
     aria-label="WhatsApp"
-    class="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform"
+    class="floating-whatsapp fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform"
   >
     <i class="fa-brands fa-whatsapp text-3xl"></i>
   </a>
 
   <!-- TOAST DE NOTIFICACIONES -->
-  <div id="mercapros-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] text-xs font-bold shadow-xl flex items-center gap-2">
+  <div id="mercapros-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-[#2A2522] text-[#F7F5F0] dark:bg-[#F2AE79] dark:text-[#171413] text-xs font-bold shadow-xl flex items-center gap-2">
     <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-900"></i>
     <span id="mercapros-toast-text"></span>
   </div>
 
   <!-- FOOTER COMPACTO CON FIRMA OBLIGATORIA -->
-  <footer class="mt-12 bg-[#14201B] text-[#F6F1E7] dark:bg-[#060B09] border-t border-white/10 py-6 px-4">
+  <footer class="site-footer mt-12 bg-[#2A2522] text-[#F7F5F0] dark:bg-[#060B09] border-t border-white/10 py-6 px-4">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
       <div class="flex items-center gap-2.5">
         <img src="assets/mercapros-logo.webp" alt="Mercapros Logo" class="w-8 h-8 rounded-full object-cover border border-white/20" />
@@ -651,7 +639,7 @@
         <a href="https://wa.me/971508379080" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center">
           <i class="fa-brands fa-whatsapp text-base"></i>
         </a>
-        <span class="font-semibold tracking-wide text-[#D9B76F]">Developed by Tecnoemprende</span>
+        <span class="font-semibold tracking-wide text-[#F2AE79]">Developed by Tecnoemprende</span>
       </div>
     </div>
   </footer>
@@ -659,5 +647,6 @@
   <!-- Scripts -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script src="ui.js"></script>
 </body>
 </html>

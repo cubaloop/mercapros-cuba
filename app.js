@@ -215,7 +215,7 @@ function renderRoleBar() {
   document.querySelectorAll('.js-role-btn').forEach(btn => {
     const code = btn.getAttribute('data-role');
     if (code === appState.currentRole) {
-      btn.className = 'js-role-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-1.5';
+      btn.className = 'js-role-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-[#2A2522] text-[#F7F5F0] dark:bg-[#F2AE79] dark:text-[#171413] shadow-sm flex items-center gap-1.5';
     } else {
       btn.className = 'js-role-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-stone-300/70 dark:border-white/10 flex items-center gap-1.5';
     }
@@ -234,10 +234,10 @@ function renderCategoriesBar() {
     return `
       <button onclick="selectCategory('${cat.id}')" class="shrink-0 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border ${
         isActive
-          ? 'bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] border-transparent shadow-sm'
-          : 'bg-[#FFFDF8] dark:bg-[#121D18] hover:border-[#7A5A1E] border-stone-200 dark:border-white/10'
+          ? 'bg-[#2A2522] text-[#F7F5F0] dark:bg-[#F2AE79] dark:text-[#171413] border-transparent shadow-sm'
+          : 'bg-[#FFFFFF] dark:bg-[#211D1B] hover:border-[#7C1D18] border-stone-200 dark:border-white/10'
       }">
-        <i class="fa-solid ${cat.icon} ${isActive ? 'text-[#D9B76F] dark:text-[#09100D]' : 'text-[#7A5A1E] dark:text-[#D9B76F]'}"></i>
+        <i class="fa-solid ${cat.icon} ${isActive ? 'text-[#F2AE79] dark:text-[#171413]' : 'text-[#7C1D18] dark:text-[#F2AE79]'}"></i>
         <span>${cat.name}</span>
       </button>
     `;
@@ -259,7 +259,7 @@ function setSaleModeFilter(mode) {
   document.querySelectorAll('.js-salemode-pill').forEach(btn => {
     const m = btn.getAttribute('data-mode');
     if (m === mode) {
-      btn.className = 'js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7A5A1E] text-white shadow-sm transition-all';
+      btn.className = 'js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#7C1D18] text-white shadow-sm transition-all';
     } else {
       btn.className = 'js-salemode-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/70 transition-all';
     }
@@ -299,11 +299,11 @@ function renderStoresSection() {
     const prodCount = appState.products.filter(p => p.vendorId === v.id).length;
 
     return `
-      <div class="rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border ${
+      <div class="store-card rounded-3xl p-4 bg-[#FFFFFF] dark:bg-[#211D1B] border ${
         isSelected
-          ? 'border-[#7A5A1E] ring-2 ring-[#7A5A1E]/30'
+          ? 'border-[#7C1D18] ring-2 ring-[#7C1D18]/30'
           : isWssnd
-          ? 'border-[#7A5A1E]/60 dark:border-[#D9B76F]/40'
+          ? 'border-[#7C1D18]/60 dark:border-[#F2AE79]/40'
           : 'border-stone-200/80 dark:border-white/10'
       } shadow-sm flex flex-col justify-between transition-all">
         <div>
@@ -312,23 +312,23 @@ function renderStoresSection() {
               ${!appState.lowDataMode ? `
                 <img src="${v.logo || 'assets/wssnd-skylink-logo.jpg'}" alt="${v.name}" class="w-12 h-12 rounded-2xl object-cover border border-stone-200 dark:border-white/15 bg-white shrink-0" />
               ` : `
-                <div class="w-10 h-10 rounded-2xl bg-[#7A5A1E]/15 text-[#7A5A1E] dark:text-[#D9B76F] flex items-center justify-center font-extrabold text-sm shrink-0">
+                <div class="w-10 h-10 rounded-2xl bg-[#7C1D18]/15 text-[#7C1D18] dark:text-[#F2AE79] flex items-center justify-center font-extrabold text-sm shrink-0">
                   ${index + 1}
                 </div>
               `}
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                  <h4 class="font-display font-bold text-base truncate">${v.name}</h4>
-                  <i class="fa-solid fa-circle-check text-[#7A5A1E] dark:text-[#D9B76F] text-xs shrink-0" title="Tienda Verificada"></i>
+                  <h4 class="store-name font-display font-bold text-base">${v.name}</h4>
+                  <i class="fa-solid fa-circle-check text-[#7C1D18] dark:text-[#F2AE79] text-xs shrink-0" title="Tienda Verificada"></i>
                 </div>
-                <span class="text-[11px] font-semibold text-[#7A5A1E] dark:text-[#D9B76F] block">${v.badge} • ${prodCount} ofertas</span>
+                <span class="text-[11px] font-semibold text-[#7C1D18] dark:text-[#F2AE79] block">${v.badge} • ${prodCount} ofertas</span>
               </div>
             </div>
             <a href="https://wa.me/${v.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm shrink-0">
               <i class="fa-brands fa-whatsapp text-base"></i>
             </a>
           </div>
-          <p class="text-xs opacity-75 mt-2.5 line-clamp-2">${v.description}</p>
+          <p class="store-description text-xs opacity-75 mt-2.5">${v.description}</p>
         </div>
 
         <div class="mt-3 pt-3 border-t border-stone-200/70 dark:border-white/10 flex items-center justify-between gap-2 text-xs">
@@ -345,8 +345,8 @@ function renderStoresSection() {
 
           <button onclick="filterByVendor('${v.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
             isSelected
-              ? 'bg-[#14201B] text-white dark:bg-[#D9B76F] dark:text-black'
-              : 'bg-[#7A5A1E] hover:bg-[#5e4415] text-white'
+              ? 'bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-black'
+              : 'bg-[#7C1D18] hover:bg-[#5D1713] text-white'
           }">
             ${isSelected ? 'Mostrando Tienda' : 'Ver Catálogo'}
           </button>
@@ -392,12 +392,12 @@ function renderCatalog() {
       const vObj = appState.vendors.find(v => v.id === effectiveVendorFilter);
       activeStoreBanner.classList.remove('hidden');
       activeStoreBanner.innerHTML = `
-        <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-[#FFFDF8] dark:bg-[#121D18] border border-[#7A5A1E]/40 text-xs">
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-[#7C1D18]/40 text-xs">
           <div class="flex items-center gap-2">
-            <i class="fa-solid fa-store text-[#7A5A1E] dark:text-[#D9B76F]"></i>
+            <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79]"></i>
             <span>Tienda seleccionada: <strong>${vObj ? vObj.name : ''}</strong></span>
           </div>
-          <button onclick="activeVendorFilter='ALL'; selectCategory('all');" class="font-bold text-[#7A5A1E] dark:text-[#D9B76F] hover:underline">
+          <button onclick="activeVendorFilter='ALL'; selectCategory('all');" class="font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
             Ver todas las tiendas
           </button>
         </div>
@@ -448,9 +448,9 @@ function renderCatalog() {
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div class="col-span-full rounded-3xl p-8 text-center bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200 dark:border-white/10">
+      <div class="col-span-full rounded-3xl p-8 text-center bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10">
         <p class="font-display text-base font-bold">No hay productos que coincidan con tu filtro</p>
-        <button onclick="activeVendorFilter='ALL'; selectCategory('all'); setSaleModeFilter('ALL');" class="mt-3 px-4 py-2 rounded-xl bg-[#14201B] text-white text-xs font-bold">
+        <button onclick="activeVendorFilter='ALL'; selectCategory('all'); setSaleModeFilter('ALL');" class="mt-3 px-4 py-2 rounded-xl bg-[#2A2522] text-white text-xs font-bold">
           Ver Todo el Catálogo
         </button>
       </div>
@@ -473,12 +473,12 @@ function renderCatalog() {
     const mediaHtml = appState.lowDataMode
       ? `
         <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between text-xs">
-          <span class="font-mono font-bold text-[#7A5A1E] dark:text-[#D9B76F]">${p.sku}</span>
+          <span class="font-mono font-bold text-[#7C1D18] dark:text-[#F2AE79]">${p.sku}</span>
           <span class="font-semibold opacity-75">${p.incoterm}</span>
         </div>
       `
       : `
-        <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white border border-stone-200/70 p-2 flex items-center justify-center">
+        <div class="product-photo relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white border border-stone-200/70 p-2 flex items-center justify-center">
           <img src="${p.image}" alt="${p.title}" loading="lazy" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
           <a href="https://wa.me/${vendor.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-md">
             <i class="fa-brands fa-whatsapp text-base"></i>
@@ -489,13 +489,13 @@ function renderCatalog() {
     let pricingBlock = '';
     if (isContainerItem) {
       pricingBlock = `
-        <div class="p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
+        <div class="product-price p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
           <div class="flex items-center justify-between text-[11px]">
-            <span class="font-bold text-[#7A5A1E] dark:text-[#D9B76F]">Total Contenedor CIF Mariel</span>
+            <span class="font-bold text-[#7C1D18] dark:text-[#F2AE79]">Total Contenedor CIF Mariel</span>
             <span class="font-bold opacity-80">${p.unitPriceLabel || ''}</span>
           </div>
-          <div class="text-lg font-extrabold tracking-tight mt-0.5">${formatMoney(p.priceContainerUsd)}</div>
-          <div class="text-[11px] opacity-75 mt-0.5 truncate" title="${p.unitRetail}">${p.unitRetail}</div>
+          <div class="text-lg font-extrabold tracking-tight mt-0.5">${formatMoney(p.priceContainerUsd).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
+          <div class="text-[11px] opacity-75 mt-0.5" title="${p.unitRetail}">${p.unitRetail}</div>
         </div>
       `;
     } else {
@@ -522,7 +522,7 @@ function renderCatalog() {
     let actionButtons = '';
     if (isContainerItem) {
       actionButtons = canBuyThisContainer
-        ? `<button onclick="addToCart('${p.id}', 'CONTAINER_B2B')" class="w-full py-2.5 px-4 rounded-xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-bold text-xs transition-all">
+        ? `<button onclick="addToCart('${p.id}', 'CONTAINER_B2B')" class="w-full py-2.5 px-4 rounded-xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-bold text-xs transition-all">
             Comprar
           </button>`
         : `<button disabled class="w-full py-2.5 px-4 rounded-xl bg-stone-300 dark:bg-white/10 text-stone-600 dark:text-stone-400 font-semibold text-xs cursor-not-allowed">
@@ -530,12 +530,12 @@ function renderCatalog() {
           </button>`;
     } else {
       const retailBtn = canBuyThisRetail
-        ? `<button onclick="addToCart('${p.id}', 'RETAIL')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#14201B] hover:bg-[#7A5A1E] dark:bg-[#D9B76F] dark:text-[#09100D] text-white font-bold text-xs transition-all">
+        ? `<button onclick="addToCart('${p.id}', 'RETAIL')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-bold text-xs transition-all">
             Comprar
           </button>`
         : '';
       const wholesaleBtn = (hasWholesale && canBuyThisWholesale)
-        ? `<button onclick="addToCart('${p.id}', 'WHOLESALE')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#7A5A1E] hover:bg-amber-800 text-white font-bold text-xs transition-all">
+        ? `<button onclick="addToCart('${p.id}', 'WHOLESALE')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#7C1D18] hover:bg-amber-800 text-white font-bold text-xs transition-all">
             Comprar (${p.minWholesaleQty}+)
           </button>`
         : '';
@@ -543,17 +543,17 @@ function renderCatalog() {
     }
 
     return `
-      <article class="group rounded-3xl p-4 bg-[#FFFDF8] dark:bg-[#121D18] border border-stone-200/90 dark:border-white/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between gap-3">
+      <article class="product-card group rounded-3xl p-4 bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200/90 dark:border-white/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between gap-3">
         <div class="space-y-2.5">
           ${mediaHtml}
           <div>
             <div class="flex items-center justify-between text-[11px] opacity-75">
-              <span class="font-bold text-[#7A5A1E] dark:text-[#D9B76F] truncate">${p.vendorName}</span>
+              <span class="font-bold text-[#7C1D18] dark:text-[#F2AE79] truncate">${p.vendorName}</span>
               <span class="shrink-0 font-semibold">
                 ${deliv.isCifPort ? 'CIF Mariel' : `${deliv.distanceKm} km • ${formatMoney(deliv.feeUsd)}`}
               </span>
             </div>
-            <h3 class="font-display font-bold text-sm sm:text-base leading-snug mt-1 line-clamp-2">${p.title}</h3>
+            <h3 class="product-name font-display font-bold text-sm sm:text-base leading-snug mt-1">${p.title}</h3>
             <p class="text-[11px] opacity-80 mt-1">${p.specs}</p>
           </div>
         </div>
@@ -628,7 +628,7 @@ function updateCartUI() {
   if (cart.length === 0) {
     listEl.innerHTML = `
       <div class="text-center py-10 opacity-70">
-        <i class="fa-solid fa-receipt text-2xl mb-2 text-[#7A5A1E]"></i>
+        <i class="fa-solid fa-receipt text-2xl mb-2 text-[#7C1D18]"></i>
         <p class="text-xs font-semibold">Tu ticket de pedido está vacío</p>
       </div>
     `;
@@ -647,7 +647,7 @@ function updateCartUI() {
     return `
       <div class="p-3 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
         <div class="min-w-0 flex-1">
-          <span class="text-[10px] font-bold text-[#7A5A1E] dark:text-[#D9B76F] block">${item.vendorName}</span>
+          <span class="text-[10px] font-bold text-[#7C1D18] dark:text-[#F2AE79] block">${item.vendorName}</span>
           <h4 class="font-bold text-xs truncate">${item.title}</h4>
           <p class="text-[11px] opacity-75">${item.unitLabel}</p>
           <p class="text-xs font-extrabold mt-0.5">${formatMoney(lineUsd)}</p>
@@ -925,7 +925,7 @@ function initOrRefreshLeafletMap() {
   appState.vendors.forEach(v => {
     const m = L.circleMarker([v.lat, v.lng], {
       radius: 9,
-      fillColor: v.role === 'EXPORTADOR_B2B' ? '#065f46' : v.role === 'MIPYME' ? '#7A5A1E' : '#0f766e',
+      fillColor: v.role === 'EXPORTADOR_B2B' ? '#065f46' : v.role === 'MIPYME' ? '#7C1D18' : '#0f766e',
       color: '#ffffff',
       weight: 2,
       fillOpacity: 0.95
@@ -950,7 +950,7 @@ function drawRouteLineToActiveVendor() {
         [activeVendor.lat, activeVendor.lng],
         [appState.userGps.lat, appState.userGps.lng]
       ],
-      { color: '#7A5A1E', weight: 3, dashArray: '6, 8' }
+      { color: '#7C1D18', weight: 3, dashArray: '6, 8' }
     ).addTo(deliveryMap);
   }
 }
@@ -989,7 +989,7 @@ function renderMapVendorDistancesTable() {
       <tr class="border-b border-stone-200/70 dark:border-white/10">
         <td class="py-2 pr-2 font-bold">${v.name}</td>
         <td class="py-2 px-1">${d.isCifPort ? 'CIF Mariel' : formatMoney(v.baseDeliveryFeeUsd)}</td>
-        <td class="py-2 px-1 font-semibold text-[#7A5A1E] dark:text-[#D9B76F]">${d.isCifPort ? '-' : `${formatMoney(v.pricePerKmUsd)}/km`}</td>
+        <td class="py-2 px-1 font-semibold text-[#7C1D18] dark:text-[#F2AE79]">${d.isCifPort ? '-' : `${formatMoney(v.pricePerKmUsd)}/km`}</td>
         <td class="py-2 px-1">${d.isCifPort ? 'Puerto' : `${d.distanceKm} km`}</td>
         <td class="py-2 pl-2 text-right font-extrabold text-emerald-800 dark:text-emerald-300">${d.isCifPort ? 'Incluido' : formatMoney(d.feeUsd)}</td>
       </tr>
@@ -1058,7 +1058,7 @@ function switchAdminTab(tabId) {
   activeAdminTab = tabId;
   document.querySelectorAll('.js-admin-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-tab') === tabId) {
-      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14201B] text-[#F6F1E7] dark:bg-[#D9B76F] dark:text-[#09100D] shadow-sm flex items-center gap-2 shrink-0';
+      btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2A2522] text-[#F7F5F0] dark:bg-[#F2AE79] dark:text-[#171413] shadow-sm flex items-center gap-2 shrink-0';
     } else {
       btn.className = 'js-admin-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/60 flex items-center gap-2 shrink-0';
     }
@@ -1109,13 +1109,13 @@ function renderAdminDashboard() {
   if (invList) {
     const vendorProducts = appState.products.filter(p => p.vendorId === activeVendor.id);
     invList.innerHTML = vendorProducts.map(p => `
-      <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+      <div class="p-3 rounded-2xl bg-[#FFFFFF] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-3 min-w-0">
           <img src="${p.image}" alt="${p.title}" class="w-12 h-12 rounded-xl object-cover border border-stone-200" />
           <div class="min-w-0">
             <span class="text-[10px] font-mono opacity-70">${p.sku}</span>
             <h5 class="font-bold text-xs sm:text-sm truncate">${p.title}</h5>
-            <p class="text-xs text-[#7A5A1E] dark:text-[#D9B76F] font-bold">
+            <p class="text-xs text-[#7C1D18] dark:text-[#F2AE79] font-bold">
               ${p.saleModes.includes('CONTAINER_B2B')
                 ? `Contenedor CIF: ${formatMoney(p.priceContainerUsd)} (${p.unitPriceLabel || ''})`
                 : `Minorista: ${formatMoney(p.priceRetailUsd)}${p.saleModes.includes('WHOLESALE') ? ` • Mayorista: ${formatMoney(p.priceWholesaleUsd)}` : ''}`
@@ -1124,7 +1124,7 @@ function renderAdminDashboard() {
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <button onclick="loadProductIntoForm('${String(p.id)}')" class="px-2.5 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 text-xs font-bold hover:bg-[#7A5A1E] hover:text-white">
+          <button onclick="loadProductIntoForm('${String(p.id)}')" class="px-2.5 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 text-xs font-bold hover:bg-[#7C1D18] hover:text-white">
             <i class="fa-solid fa-pen"></i>
           </button>
           <button onclick="deleteProductStrict('${String(p.id)}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/15 text-red-700 text-xs font-bold hover:bg-red-600 hover:text-white">
@@ -1138,7 +1138,7 @@ function renderAdminDashboard() {
   const annList = document.getElementById('admin-announcements-list');
   if (annList) {
     annList.innerHTML = appState.announcements.map(a => `
-      <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
+      <div class="p-3 rounded-2xl bg-[#FFFFFF] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
         <div>
           <h5 class="font-bold text-xs">${a.title}</h5>
           <p class="text-[11px] opacity-75">${a.subtitle}</p>
@@ -1153,9 +1153,9 @@ function renderAdminDashboard() {
   const catList = document.getElementById('admin-categories-list');
   if (catList) {
     catList.innerHTML = appState.categories.filter(c => c.id !== 'all').map(c => `
-      <div class="p-3 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between">
+      <div class="p-3 rounded-2xl bg-[#FFFFFF] dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <i class="fa-solid ${c.icon} text-[#7A5A1E]"></i>
+          <i class="fa-solid ${c.icon} text-[#7C1D18]"></i>
           <span class="font-bold text-xs">${c.name}</span>
         </div>
         <button onclick="deleteCategoryStrict('${String(c.id)}')" class="text-xs text-red-600 font-bold hover:underline">Quitar</button>
@@ -1166,9 +1166,9 @@ function renderAdminDashboard() {
   const ordList = document.getElementById('admin-orders-list');
   if (ordList) {
     ordList.innerHTML = appState.orders.map(o => `
-      <div class="p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-1">
+      <div class="p-3.5 rounded-2xl bg-[#FFFFFF] dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-1">
         <div class="flex items-center justify-between">
-          <span class="font-mono font-extrabold text-xs text-[#7A5A1E] dark:text-[#D9B76F]">${o.id} • ${o.date}</span>
+          <span class="font-mono font-extrabold text-xs text-[#7C1D18] dark:text-[#F2AE79]">${o.id} • ${o.date}</span>
           <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">${o.status}</span>
         </div>
         <div class="font-bold text-xs">${o.customerName} → ${o.vendorName}</div>

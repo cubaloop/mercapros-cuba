@@ -4,6 +4,7 @@
   "description": "Plataforma Híbrida B2B/B2C para el mercado de Cuba (Exportadores, Mipymes, TCP y Consumidor Final) inspirada en Careem Super-App & Supermarket 23",
   "main": "server.js",
   "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i design.css -o styles.css --minify",
     "start": "node server.js",
     "dev": "node server.js"
   },
@@ -12,5 +13,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.19"
   }
 }
