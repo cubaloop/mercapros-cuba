@@ -115,9 +115,10 @@ img { max-width:100%; }
  .header-brand { grid-column:1/6; }
  .header-actions button[onclick="toggleCartDrawer(true)"] { grid-column:6; grid-row:1; padding-inline:8px; gap:4px; }
  .header-search { grid-column:1/-1; }
- .header-actions button[onclick="toggleLowDataMode()"] { display:flex; grid-column:1/3; justify-content:center; padding-inline:4px; font-size:10px; }
- .header-actions .js-currency-select { grid-column:3; padding-inline:4px; font-size:11px; appearance:none; text-align:center; }
- .header-actions>button[aria-label="Cambiar Tema"] { grid-column:4; }
+ .header-actions button[onclick="toggleLowDataMode()"] { display:flex; grid-column:1; justify-content:center; padding-inline:4px; font-size:9px; }
+ .header-actions .js-currency-select { grid-column:2; padding-inline:4px; font-size:11px; appearance:none; text-align:center; }
+ .header-actions>button[aria-label="Cambiar Tema"] { grid-column:3; }
+ .header-actions #header-user-auth-btn { grid-column:4; padding:0; justify-content:center; }
  .header-actions>button[aria-label="Panel de negocios"]:not(#header-admin-gold-pill) { grid-column:5; padding:0; justify-content:center; }
  .header-actions>a { grid-column:6; width:100%; }
  .header-actions #header-admin-gold-pill:not(.hidden) { grid-row:4; grid-column:1/-1; justify-content:center; }

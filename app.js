@@ -125,9 +125,22 @@ function formatMoney(amountUsd) {
   return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 }
 
+let detailModalProductId = null;
+let detailModalMode = 'RETAIL';
+let detailModalQty = 1;
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (appState.currentUser) {
+    appState.currentRole = appState.currentUser.role || appState.currentRole;
+    if (appState.currentUser.vendorId) {
+      appState.activeVendorId = appState.currentUser.vendorId;
+      isAdminAuthenticated = true;
+    }
+  }
   applyThemeAndConnectivity();
   populateProvinceAndMunicipalitySelectors();
+  populateRegisterLocationSelectors();
+  updateAuthHeaderUI();
   renderRoleBar();
   renderCategoriesBar();
   renderStoresSection();
@@ -188,6 +201,9 @@ function changeCurrency(newCurr) {
   renderStoresSection();
   renderCatalog();
   updateCartUI();
+  if (detailModalProductId) {
+    renderProductDetailModalContent(detailModalProductId);
+  }
 }
 
 // ============================================================================
@@ -223,7 +239,7 @@ function renderRoleBar() {
 }
 
 // ============================================================================
-// CATEGORÍAS (CON "TIENDAS" DESTACADA Y SIN PÍLDORAS DE RELLENO)
+// CATEGORÍAS (PRODUCTOS PRIMERO; PANTALLA TIENDAS ABRE AL FILTRAR "TIENDAS")
 // ============================================================================
 function renderCategoriesBar() {
   const bar = document.getElementById('categories-scroll-bar');
@@ -248,6 +264,9 @@ function selectCategory(catId) {
   activeCategory = catId;
   if (catId === 'contenedores-b2b') {
     activeSaleFilter = 'ALL';
+  }
+  if (catId !== 'tiendas') {
+    // Si cambia a una categoría de productos o "Todo el Catálogo", limpiar filtro forzado si venía de tiendas
   }
   renderCategoriesBar();
   renderStoresSection();
@@ -278,18 +297,19 @@ function handleSortChange(val) {
 }
 
 // ============================================================================
-// SECCIÓN "TIENDAS" (WSSND SKYLINK COMO PRIMERA TIENDA OFICIAL)
+// PANTALLA DE TIENDAS OFICIALES (SOLO SE MUESTRA AL FILTRAR POR "TIENDAS")
 // ============================================================================
 function renderStoresSection() {
   const storesWrapper = document.getElementById('stores-showcase-section');
   const container = document.getElementById('vendors-showcase-grid');
   if (!container || !storesWrapper) return;
 
-  // Destacar sección Tiendas especialmente cuando se elige la categoría "tiendas" o vista general
+  // Regla del usuario: Las tiendas oficiales NO van de primero; abren solo cuando alguien filtra por la categoría "tiendas"
   if (activeCategory === 'tiendas') {
     storesWrapper.classList.remove('hidden');
   } else {
-    storesWrapper.classList.remove('hidden');
+    storesWrapper.classList.add('hidden');
+    return;
   }
 
   container.innerHTML = appState.vendors.map((v, index) => {
@@ -348,7 +368,7 @@ function renderStoresSection() {
               ? 'bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-black'
               : 'bg-[#7C1D18] hover:bg-[#5D1713] text-white'
           }">
-            ${isSelected ? 'Mostrando Tienda' : 'Ver Catálogo'}
+            ${isSelected ? 'Mostrando Tienda' : 'Ver Productos'}
           </button>
         </div>
       </div>
@@ -371,7 +391,7 @@ function filterByVendor(vendorId) {
 }
 
 // ============================================================================
-// CATÁLOGO DE PRODUCTOS (DISEÑO LIMPIO SIN ETIQUETAS INNECESARIAS)
+// CATÁLOGO DE PRODUCTOS (CARTELES MINIMALISTAS: FOTO, NOMBRE, PRECIO, UNIDAD Y BOTÓN AÑADIR)
 // ============================================================================
 function renderCatalog() {
   const grid = document.getElementById('catalog-products-grid');
@@ -380,12 +400,7 @@ function renderCatalog() {
   if (!grid) return;
 
   const role = ROLE_MATRIX[appState.currentRole] || ROLE_MATRIX.ALL_VIEW;
-
-  // Si el usuario seleccionó la categoría "tiendas" y no ha filtrado una tienda específica, mostrar primero WSSND SKYLINK
-  let effectiveVendorFilter = activeVendorFilter;
-  if (activeCategory === 'tiendas' && activeVendorFilter === 'ALL') {
-    effectiveVendorFilter = 'v-wssnd-01';
-  }
+  const effectiveVendorFilter = activeVendorFilter;
 
   if (activeStoreBanner) {
     if (effectiveVendorFilter !== 'ALL') {
@@ -395,10 +410,10 @@ function renderCatalog() {
         <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-[#7C1D18]/40 text-xs">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79]"></i>
-            <span>Tienda seleccionada: <strong>${vObj ? vObj.name : ''}</strong></span>
+            <span>Mostrando productos de: <strong>${vObj ? vObj.name : ''}</strong></span>
           </div>
-          <button onclick="activeVendorFilter='ALL'; selectCategory('all');" class="font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
-            Ver todas las tiendas
+          <button onclick="activeVendorFilter='ALL'; renderStoresSection(); renderCatalog();" class="font-bold text-[#7C1D18] dark:text-[#F2AE79] hover:underline">
+            Ver todos los productos
           </button>
         </div>
       `;
@@ -409,7 +424,6 @@ function renderCatalog() {
   }
 
   let filtered = appState.products.filter(p => {
-    // Filtro por Categoría
     if (activeCategory !== 'all' && activeCategory !== 'tiendas') {
       if (activeCategory === 'contenedores-b2b') {
         if (!p.isContainerOffer && !p.saleModes.includes('CONTAINER_B2B')) return false;
@@ -418,16 +432,13 @@ function renderCatalog() {
       }
     }
 
-    // Filtro por Tienda / Vendedor
     if (effectiveVendorFilter !== 'ALL' && p.vendorId !== effectiveVendorFilter) return false;
 
-    // Filtro por Modalidad
     if (activeSaleFilter === 'CONTAINER_B2B' && !p.saleModes.includes('CONTAINER_B2B')) return false;
     if (activeSaleFilter === 'WHOLESALE' && !p.saleModes.includes('WHOLESALE')) return false;
     if (activeSaleFilter === 'RETAIL' && !p.saleModes.includes('RETAIL')) return false;
     if (activeSaleFilter === 'FLASH' && !p.isFlashOffer) return false;
 
-    // Búsqueda
     if (searchQuery) {
       const haystack = `${p.title} ${p.sku} ${p.vendorName} ${p.specs} ${p.description}`.toLowerCase();
       if (!haystack.includes(searchQuery)) return false;
@@ -459,9 +470,6 @@ function renderCatalog() {
   }
 
   grid.innerHTML = filtered.map(p => {
-    const vendor = appState.vendors.find(v => v.id === p.vendorId) || appState.vendors[0];
-    const deliv = calculateVendorDelivery(vendor);
-
     const isContainerItem = p.saleModes.includes('CONTAINER_B2B');
     const hasWholesale = p.saleModes.includes('WHOLESALE');
     const hasRetail = p.saleModes.includes('RETAIL');
@@ -470,95 +478,55 @@ function renderCatalog() {
     const canBuyThisWholesale = hasWholesale && role.canBuyWholesale;
     const canBuyThisRetail = hasRetail && role.canBuyRetail;
 
+    const primaryPriceUsd = isContainerItem ? p.priceContainerUsd : p.priceRetailUsd;
+    const primaryUnitText = isContainerItem
+      ? `${p.unitRetail}${p.unitPriceLabel ? ` • ${p.unitPriceLabel}` : ''}`
+      : `${p.unitRetail}${hasWholesale ? ` • Mayor: ${formatMoney(p.priceWholesaleUsd)} (${p.unitWholesale})` : ''}`;
+
+    // Foto sin botón de WhatsApp; al hacer clic abre la pantalla independiente del producto
     const mediaHtml = appState.lowDataMode
       ? `
-        <div class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between text-xs">
+        <div onclick="openProductDetailModal('${p.id}')" class="cursor-pointer p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between text-xs hover:border-[#7C1D18] transition-colors">
           <span class="font-mono font-bold text-[#7C1D18] dark:text-[#F2AE79]">${p.sku}</span>
-          <span class="font-semibold opacity-75">${p.incoterm}</span>
+          <span class="font-semibold opacity-75">Ver ficha →</span>
         </div>
       `
       : `
-        <div class="product-photo relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white border border-stone-200/70 p-2 flex items-center justify-center">
+        <div onclick="openProductDetailModal('${p.id}')" class="product-photo cursor-pointer relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white border border-stone-200/70 p-2 flex items-center justify-center">
           <img src="${p.image}" alt="${p.title}" loading="lazy" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-          <a href="https://wa.me/${vendor.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp" class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-md">
-            <i class="fa-brands fa-whatsapp text-base"></i>
-          </a>
         </div>
       `;
 
-    let pricingBlock = '';
-    if (isContainerItem) {
-      pricingBlock = `
-        <div class="product-price p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="font-bold text-[#7C1D18] dark:text-[#F2AE79]">Total Contenedor CIF Mariel</span>
-            <span class="font-bold opacity-80">${p.unitPriceLabel || ''}</span>
-          </div>
-          <div class="text-lg font-extrabold tracking-tight mt-0.5">${formatMoney(p.priceContainerUsd).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
-          <div class="text-[11px] opacity-75 mt-0.5" title="${p.unitRetail}">${p.unitRetail}</div>
-        </div>
-      `;
-    } else {
-      pricingBlock = `
-        <div class="grid ${hasWholesale ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
-          ${hasRetail ? `
-            <div class="p-2.5 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
-              <span class="text-[10px] font-bold uppercase opacity-70 block">Minorista</span>
-              <span class="text-base font-extrabold">${formatMoney(p.priceRetailUsd)}</span>
-              <span class="text-[10px] opacity-75 block truncate">${p.unitRetail}</span>
-            </div>
-          ` : ''}
-          ${hasWholesale ? `
-            <div class="p-2.5 rounded-2xl bg-amber-900/10 dark:bg-amber-500/10 border border-amber-800/20">
-              <span class="text-[10px] font-bold uppercase text-amber-900 dark:text-amber-300 block">Mayorista (${p.minWholesaleQty}+)</span>
-              <span class="text-base font-extrabold">${formatMoney(p.priceWholesaleUsd)}</span>
-              <span class="text-[10px] opacity-75 block truncate">${p.unitWholesale}</span>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
+    // Bloque minimalista de Precio + Unidad de Medida
+    const pricingBlock = `
+      <div onclick="openProductDetailModal('${p.id}')" class="product-price cursor-pointer p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
+        <div class="text-lg font-extrabold tracking-tight">${formatMoney(primaryPriceUsd).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
+        <div class="text-[11px] font-semibold opacity-80 mt-0.5" title="${primaryUnitText}">${primaryUnitText}</div>
+      </div>
+    `;
 
-    let actionButtons = '';
-    if (isContainerItem) {
-      actionButtons = canBuyThisContainer
-        ? `<button onclick="addToCart('${p.id}', 'CONTAINER_B2B')" class="w-full py-2.5 px-4 rounded-xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-bold text-xs transition-all">
-            Comprar
-          </button>`
-        : `<button disabled class="w-full py-2.5 px-4 rounded-xl bg-stone-300 dark:bg-white/10 text-stone-600 dark:text-stone-400 font-semibold text-xs cursor-not-allowed">
-            Solo Mipyme / Importador
-          </button>`;
-    } else {
-      const retailBtn = canBuyThisRetail
-        ? `<button onclick="addToCart('${p.id}', 'RETAIL')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-bold text-xs transition-all">
-            Comprar
-          </button>`
-        : '';
-      const wholesaleBtn = (hasWholesale && canBuyThisWholesale)
-        ? `<button onclick="addToCart('${p.id}', 'WHOLESALE')" class="flex-1 py-2.5 px-3 rounded-xl bg-[#7C1D18] hover:bg-amber-800 text-white font-bold text-xs transition-all">
-            Comprar (${p.minWholesaleQty}+)
-          </button>`
-        : '';
-      actionButtons = `<div class="flex items-center gap-2">${retailBtn}${wholesaleBtn}</div>`;
-    }
+    // Botón de acción: "Añadir" con ícono del carrito de compras
+    let defaultAddMode = isContainerItem ? 'CONTAINER_B2B' : (canBuyThisRetail ? 'RETAIL' : 'WHOLESALE');
+    let canAdd = isContainerItem ? canBuyThisContainer : (canBuyThisRetail || canBuyThisWholesale);
+
+    const actionButtons = canAdd
+      ? `<button onclick="addToCart('${p.id}', '${defaultAddMode}')" class="w-full py-2.5 px-4 rounded-xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>Añadir</span>
+        </button>`
+      : `<button onclick="openProductDetailModal('${p.id}')" class="w-full py-2.5 px-4 rounded-xl bg-stone-200 dark:bg-white/10 text-stone-700 dark:text-stone-300 font-semibold text-xs flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Ver Requisitos</span>
+        </button>`;
 
     return `
       <article class="product-card group rounded-3xl p-4 bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200/90 dark:border-white/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between gap-3">
         <div class="space-y-2.5">
           ${mediaHtml}
-          <div>
-            <div class="flex items-center justify-between text-[11px] opacity-75">
-              <span class="font-bold text-[#7C1D18] dark:text-[#F2AE79] truncate">${p.vendorName}</span>
-              <span class="shrink-0 font-semibold">
-                ${deliv.isCifPort ? 'CIF Mariel' : `${deliv.distanceKm} km • ${formatMoney(deliv.feeUsd)}`}
-              </span>
-            </div>
-            <h3 class="product-name font-display font-bold text-sm sm:text-base leading-snug mt-1">${p.title}</h3>
-            <p class="text-[11px] opacity-80 mt-1">${p.specs}</p>
-          </div>
+          <h3 onclick="openProductDetailModal('${p.id}')" class="product-name cursor-pointer hover:text-[#7C1D18] dark:hover:text-[#F2AE79] font-display font-bold text-sm sm:text-base leading-snug transition-colors">${p.title}</h3>
         </div>
 
-        <div class="space-y-2 pt-2 border-t border-stone-200/60 dark:border-white/10">
+        <div class="space-y-2 pt-1">
           ${pricingBlock}
           ${actionButtons}
         </div>
@@ -568,9 +536,228 @@ function renderCatalog() {
 }
 
 // ============================================================================
+// PANTALLA INDEPENDIENTE DE DETALLE DEL PRODUCTO (AL HACER CLIC ARRIBA)
+// ============================================================================
+function openProductDetailModal(productId) {
+  const p = appState.products.find(x => String(x.id) === String(productId));
+  if (!p) return;
+
+  detailModalProductId = String(p.id);
+  detailModalMode = p.saleModes.includes('CONTAINER_B2B')
+    ? 'CONTAINER_B2B'
+    : p.saleModes.includes('RETAIL')
+    ? 'RETAIL'
+    : 'WHOLESALE';
+  detailModalQty = detailModalMode === 'WHOLESALE' ? Number(p.minWholesaleQty || 1) : 1;
+
+  renderProductDetailModalContent(detailModalProductId);
+  const modal = document.getElementById('product-detail-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeProductDetailModal() {
+  const modal = document.getElementById('product-detail-modal');
+  if (modal) modal.classList.add('hidden');
+  detailModalProductId = null;
+}
+
+function setDetailModalMode(mode, minQty) {
+  detailModalMode = mode;
+  detailModalQty = mode === 'WHOLESALE' ? Math.max(detailModalQty, Number(minQty || 1)) : Math.max(1, detailModalQty);
+  if (detailModalProductId) {
+    renderProductDetailModalContent(detailModalProductId);
+  }
+}
+
+function changeDetailModalQty(delta, minQty) {
+  const minAllowed = detailModalMode === 'WHOLESALE' ? Number(minQty || 1) : 1;
+  detailModalQty = Math.max(minAllowed, detailModalQty + delta);
+  if (detailModalProductId) {
+    renderProductDetailModalContent(detailModalProductId);
+  }
+}
+
+function renderProductDetailModalContent(productId) {
+  const p = appState.products.find(x => String(x.id) === String(productId));
+  if (!p) return;
+
+  const vendor = appState.vendors.find(v => v.id === p.vendorId) || appState.vendors[0];
+  const deliv = calculateVendorDelivery(vendor);
+  const catObj = appState.categories.find(c => c.id === p.category);
+  const role = ROLE_MATRIX[appState.currentRole] || ROLE_MATRIX.ALL_VIEW;
+
+  const skuEl = document.getElementById('detail-modal-sku');
+  const catEl = document.getElementById('detail-modal-category');
+  const bodyEl = document.getElementById('product-detail-body');
+  if (!bodyEl) return;
+
+  if (skuEl) skuEl.textContent = p.sku;
+  if (catEl) catEl.textContent = catObj ? catObj.name : p.category;
+
+  const isContainerItem = p.saleModes.includes('CONTAINER_B2B');
+  const hasWholesale = p.saleModes.includes('WHOLESALE');
+  const hasRetail = p.saleModes.includes('RETAIL');
+
+  const activeUnitPriceUsd =
+    detailModalMode === 'CONTAINER_B2B'
+      ? Number(p.priceContainerUsd)
+      : detailModalMode === 'WHOLESALE'
+      ? Number(p.priceWholesaleUsd)
+      : Number(p.priceRetailUsd);
+
+  const activeUnitLabel =
+    detailModalMode === 'WHOLESALE' ? p.unitWholesale : p.unitRetail;
+
+  const canBuyCurrentMode =
+    (detailModalMode === 'CONTAINER_B2B' && role.canBuyContainer) ||
+    (detailModalMode === 'WHOLESALE' && role.canBuyWholesale) ||
+    (detailModalMode === 'RETAIL' && role.canBuyRetail);
+
+  const lineTotalUsd = activeUnitPriceUsd * detailModalQty;
+
+  bodyEl.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+      <!-- Columna Izquierda: Imagen en Fondo Blanco + Tarjeta de la Tienda -->
+      <div class="md:col-span-5 space-y-4">
+        <div class="aspect-square w-full rounded-3xl bg-white border border-stone-200 p-4 flex items-center justify-center shadow-sm">
+          <img src="${p.image}" alt="${p.title}" class="w-full h-full object-contain" />
+        </div>
+
+        <!-- Información de la Tienda / Proveedor -->
+        <div class="p-4 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-2 text-xs">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <img src="${vendor.logo || 'assets/wssnd-skylink-logo.jpg'}" alt="${vendor.name}" class="w-10 h-10 rounded-xl object-contain bg-white border border-stone-200 p-0.5" />
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">${vendor.badge}</span>
+                <h4 class="font-display font-bold text-sm">${vendor.name}</h4>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-amber-600"><i class="fa-solid fa-star"></i> ${vendor.rating}</span>
+          </div>
+          <p class="text-[11px] opacity-80">${vendor.description}</p>
+          <button onclick="closeProductDetailModal(); activeVendorFilter='${vendor.id}'; renderCatalog();" class="w-full py-2 rounded-xl bg-white dark:bg-white/10 border border-stone-300 dark:border-white/15 font-bold text-xs hover:border-[#7C1D18] transition-all">
+            Ver todos los productos de ${vendor.name}
+          </button>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Toda la Información Detallada del Producto -->
+      <div class="md:col-span-7 space-y-4">
+        <div>
+          <h2 class="font-display text-xl sm:text-2xl font-extrabold leading-snug">${p.title}</h2>
+          <p class="text-xs sm:text-sm opacity-85 mt-2 leading-relaxed">${p.description || 'Producto verificado disponible en el catálogo oficial de Mercapros Cuba.'}</p>
+        </div>
+
+        <!-- Desglose de Precios y Unidades de Medida -->
+        <div class="p-4 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
+          ${isContainerItem ? `
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">Precio por Contenedor CIF Mariel</span>
+                <span class="text-2xl sm:text-3xl font-extrabold">${formatMoney(p.priceContainerUsd)}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-bold opacity-75 block">Costo Unitario Referencial</span>
+                <span class="text-base font-extrabold text-[#7C1D18] dark:text-[#F2AE79]">${p.unitPriceLabel || `$${p.priceRetailUsd} USD`}</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-stone-200 dark:border-white/10 text-xs flex flex-wrap items-center justify-between gap-2">
+              <span><strong>Unidad de Medida:</strong> ${p.unitRetail}</span>
+              <span class="font-bold text-emerald-800 dark:text-emerald-300"><i class="fa-solid fa-ship mr-1"></i>${p.incoterm}</span>
+            </div>
+          ` : `
+            <div class="grid ${hasWholesale ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-2.5">
+              ${hasRetail ? `
+                <button type="button" onclick="setDetailModalMode('RETAIL', 1)" class="p-3 rounded-xl border text-left transition-all ${
+                  detailModalMode === 'RETAIL'
+                    ? 'bg-white dark:bg-[#171413] border-[#7C1D18] ring-2 ring-[#7C1D18]/20'
+                    : 'bg-white/60 dark:bg-white/5 border-stone-200 dark:border-white/10'
+                }">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">Compra Minorista</span>
+                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceRetailUsd)}</span>
+                  <span class="text-xs opacity-80 block mt-0.5">Unidad: <strong>${p.unitRetail}</strong></span>
+                </button>
+              ` : ''}
+              ${hasWholesale ? `
+                <button type="button" onclick="setDetailModalMode('WHOLESALE', ${p.minWholesaleQty || 3})" class="p-3 rounded-xl border text-left transition-all ${
+                  detailModalMode === 'WHOLESALE'
+                    ? 'bg-white dark:bg-[#171413] border-[#7C1D18] ring-2 ring-[#7C1D18]/20'
+                    : 'bg-white/60 dark:bg-white/5 border-stone-200 dark:border-white/10'
+                }">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">Compra Mayorista (Mín. ${p.minWholesaleQty}+)</span>
+                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceWholesaleUsd)}</span>
+                  <span class="text-xs opacity-80 block mt-0.5">Unidad: <strong>${p.unitWholesale}</strong></span>
+                </button>
+              ` : ''}
+            </div>
+          `}
+        </div>
+
+        <!-- Ficha Técnica, Origen, Naviera y Logística de Entrega -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-black/20 border border-stone-200 dark:border-white/10 space-y-2.5 text-xs">
+          <h4 class="font-display font-bold text-sm">Especificaciones Técnicas y Logística</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="p-2.5 rounded-xl bg-stone-100/80 dark:bg-white/5">
+              <span class="text-[10px] font-bold uppercase opacity-60 block">Ficha / Origen / Naviera</span>
+              <span class="font-semibold block mt-0.5">${p.specs}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-stone-100/80 dark:bg-white/5">
+              <span class="text-[10px] font-bold uppercase opacity-60 block">Condición de Entrega / Domicilio</span>
+              <span class="font-semibold block mt-0.5">
+                ${deliv.isCifPort
+                  ? 'CIF Puerto del Mariel, Cuba (Flete marítimo incluido)'
+                  : `${appState.selectedMunicipality} • ${deliv.distanceKm} km (${formatMoney(deliv.feeUsd)})`
+                }
+              </span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-stone-100/80 dark:bg-white/5">
+              <span class="text-[10px] font-bold uppercase opacity-60 block">Unidad de Medida Seleccionada</span>
+              <span class="font-semibold block mt-0.5">${activeUnitLabel}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-stone-100/80 dark:bg-white/5">
+              <span class="text-[10px] font-bold uppercase opacity-60 block">Disponibilidad en Stock</span>
+              <span class="font-semibold text-emerald-700 dark:text-emerald-400 block mt-0.5">${p.stock} lotes/unidades disponibles</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selector de Cantidad + Botón "Añadir" con Ícono del Carrito -->
+        <div class="pt-2 flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2 bg-stone-100 dark:bg-white/10 px-3 py-2 rounded-2xl border border-stone-300 dark:border-white/15">
+            <button type="button" onclick="changeDetailModalQty(-1, ${p.minWholesaleQty || 1})" class="w-8 h-8 rounded-xl bg-white dark:bg-black/40 font-extrabold text-sm">-</button>
+            <span class="w-10 text-center font-extrabold text-sm">${detailModalQty}</span>
+            <button type="button" onclick="changeDetailModalQty(1, ${p.minWholesaleQty || 1})" class="w-8 h-8 rounded-xl bg-white dark:bg-black/40 font-extrabold text-sm">+</button>
+          </div>
+
+          ${canBuyCurrentMode ? `
+            <button type="button" onclick="addToCartWithQty('${p.id}', '${detailModalMode}', ${detailModalQty}); closeProductDetailModal();" class="flex-1 py-3.5 px-5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-cart-shopping"></i>
+              <span>Añadir (${formatMoney(lineTotalUsd)})</span>
+            </button>
+          ` : `
+            <button type="button" onclick="closeProductDetailModal(); openUserAuthModal();" class="flex-1 py-3.5 px-5 rounded-2xl bg-[#7C1D18] text-white font-extrabold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-user-lock"></i>
+              <span>Requiere Cuenta Mipyme / Importador</span>
+            </button>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================================
 // CARRITO Y ENVÍO DE TICKET DE COMPRA A WHATSAPP (SIN PASARELA DE PAGO)
 // ============================================================================
 function addToCart(productId, mode) {
+  const product = appState.products.find(p => String(p.id) === String(productId));
+  if (!product) return;
+  const minQty = mode === 'WHOLESALE' ? Number(product.minWholesaleQty || 1) : 1;
+  addToCartWithQty(productId, mode, minQty);
+}
+
+function addToCartWithQty(productId, mode, qtyToAdd) {
   const product = appState.products.find(p => String(p.id) === String(productId));
   if (!product) return;
 
@@ -581,12 +768,12 @@ function addToCart(productId, mode) {
       ? Number(product.priceWholesaleUsd)
       : Number(product.priceRetailUsd);
 
-  const minQty = mode === 'WHOLESALE' ? Number(product.minWholesaleQty || 1) : 1;
+  const validQty = Math.max(1, Number(qtyToAdd || 1));
   const cartKey = `${product.id}__${mode}`;
 
   const existing = cart.find(item => item.cartKey === cartKey);
   if (existing) {
-    existing.qty += 1;
+    existing.qty += validQty;
   } else {
     cart.push({
       cartKey,
@@ -598,12 +785,12 @@ function addToCart(productId, mode) {
       mode,
       unitLabel: mode === 'WHOLESALE' ? product.unitWholesale : product.unitRetail,
       unitPriceUsd,
-      qty: minQty
+      qty: validQty
     });
   }
 
   updateCartUI();
-  showToast(`Añadido al ticket: ${product.title}`);
+  showToast(`Añadido al carrito: ${product.title}`);
 }
 
 function updateCartItemQty(cartKey, delta) {
@@ -799,6 +986,23 @@ function toggleCartDrawer(show) {
   if (!drawer) return;
   if (show) {
     drawer.classList.remove('hidden');
+    if (appState.currentUser) {
+      const nameInput = document.getElementById('checkout-customer-name');
+      const notesInput = document.getElementById('checkout-customer-notes');
+      if (nameInput && !nameInput.value.trim()) {
+        const orgLabel = appState.currentUser.companyName || appState.currentUser.businessName || '';
+        nameInput.value = orgLabel ? `${orgLabel} (${appState.currentUser.fullName})` : appState.currentUser.fullName;
+      }
+      if (notesInput && !notesInput.value.trim()) {
+        const extra = [
+          appState.currentUser.phone ? `Tel: ${appState.currentUser.phone}` : '',
+          appState.currentUser.ci ? `CI: ${appState.currentUser.ci}` : '',
+          appState.currentUser.nit ? `NIT: ${appState.currentUser.nit}` : '',
+          appState.currentUser.reference ? `Ref: ${appState.currentUser.reference}` : ''
+        ].filter(Boolean).join(' • ');
+        notesInput.value = extra;
+      }
+    }
     updateCartUI();
   } else {
     drawer.classList.add('hidden');
@@ -1000,7 +1204,19 @@ function renderMapVendorDistancesTable() {
 // ============================================================================
 // DASHBOARD ADMINISTRADOR MÓVIL (5 PESTAÑAS + RBAC)
 // ============================================================================
+function populateAdminVendorSelects() {
+  const loginSelect = document.getElementById('admin-role-login-select');
+  const dashSelect = document.getElementById('admin-active-vendor-select');
+  const optionsHtml = appState.vendors.map(v => {
+    const prefix = v.role === 'EXPORTADOR_B2B' ? 'Exportador' : v.role === 'MIPYME' ? 'Mipyme' : 'TCP';
+    return `<option value="${v.id}">${prefix}: ${v.name}</option>`;
+  }).join('');
+  if (loginSelect) loginSelect.innerHTML = optionsHtml;
+  if (dashSelect) dashSelect.innerHTML = optionsHtml;
+}
+
 function openAdminModal() {
+  populateAdminVendorSelects();
   if (!isAdminAuthenticated) {
     document.getElementById('admin-login-modal').classList.remove('hidden');
   } else {
@@ -1074,6 +1290,7 @@ function switchAdminTab(tabId) {
 }
 
 function renderAdminDashboard() {
+  populateAdminVendorSelects();
   const activeVendor = appState.vendors.find(v => v.id === appState.activeVendorId) || appState.vendors[0];
 
   const vendorSwitcher = document.getElementById('admin-active-vendor-select');
@@ -1465,3 +1682,376 @@ function showToast(msg) {
     toast.classList.add('hidden');
   }, 3000);
 }
+
+// ============================================================================
+// SISTEMA DE AUTENTICACIÓN Y CREACIÓN DE USUARIOS (4 NIVELES DE PLATAFORMA)
+// ============================================================================
+const REGISTER_ROLE_DESCRIPTIONS = {
+  CLIENTE_B2C: {
+    title: 'Nivel 4: Usuario Común / Cliente a Domicilio (B2C)',
+    desc: 'Permisos: Compra productos al detalle con entrega puerta a puerta en Cuba calculada automáticamente por kilómetro GPS.',
+    fullnameLabel: 'Nombre y Apellidos del Comprador / Destinatario:',
+    locationHeading: 'Dirección Exacta de Entrega a Domicilio en Cuba',
+    addressLabel: 'Dirección de Vivienda (Calle, #, Apto, Entrecalles, Reparto):'
+  },
+  TCP: {
+    title: 'Nivel 3: Trabajador por Cuenta Propia (TCP)',
+    desc: 'Permisos: Puede comprar Mayorista y Minorista, y dispone de su propio Dashboard e inventario para VENDER EXCLUSIVAMENTE MINORISTA con tarifa de domicilio por km.',
+    fullnameLabel: 'Nombre y Apellidos del Titular TCP:',
+    locationHeading: 'Ubicación del Punto de Venta / Negocio TCP en Cuba',
+    addressLabel: 'Dirección Exacta del Negocio TCP:'
+  },
+  MIPYME: {
+    title: 'Nivel 2: Mipyme Cubana (S.U.R.L. / S.R.L.)',
+    desc: 'Permisos: Puede importar/comprar por Contenedor CIF Mariel, Mayorista y Minorista; y publicar su catálogo para VENDER MAYORISTA Y MINORISTA con tarifa por km.',
+    fullnameLabel: 'Nombre y Apellidos del Representante Legal / Socio:',
+    locationHeading: 'Ubicación del Almacén / Sede de la Mipyme en Cuba',
+    addressLabel: 'Dirección Exacta del Almacén o Sede Social:'
+  },
+  EXPORTADOR_B2B: {
+    title: 'Nivel 1: Proveedor / Empresa Exportadora Extranjera',
+    desc: 'Permisos: Publica y comercializa ofertas de exportación por Contenedor Completo (20\'/40\' Dry & Reefer CIF Mariel / Habana) para Mipymes e importadores.',
+    fullnameLabel: 'Nombre y Cargo del Representante Comercial:',
+    locationHeading: 'Puerto / Terminal de Recepción en Cuba',
+    addressLabel: 'Terminal Portuaria Destino Habitual:'
+  }
+};
+
+function populateRegisterLocationSelectors() {
+  const provEl = document.getElementById('reg-province');
+  const munEl = document.getElementById('reg-municipality');
+  if (!provEl || !munEl) return;
+
+  const provinces = Object.keys(CUBA_GEO);
+  provEl.innerHTML = provinces.map(p => `<option value="${p}">${p}</option>`).join('');
+  onRegProvinceChange(provinces[0]);
+}
+
+function onRegProvinceChange(provName) {
+  const munEl = document.getElementById('reg-municipality');
+  if (!munEl) return;
+  const list = CUBA_GEO[provName] || CUBA_GEO["La Habana"];
+  munEl.innerHTML = list.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+}
+
+function openUserAuthModal(defaultTab) {
+  const modal = document.getElementById('user-auth-modal');
+  if (!modal) return;
+  populateRegisterLocationSelectors();
+  selectRegisterRole('CLIENTE_B2C');
+  renderActiveSessionInsideAuthModal();
+  if (defaultTab) {
+    switchUserAuthTab(defaultTab);
+  } else {
+    switchUserAuthTab(appState.currentUser ? 'login' : 'register');
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeUserAuthModal() {
+  const modal = document.getElementById('user-auth-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchUserAuthTab(tab) {
+  const loginBtn = document.getElementById('auth-tab-login-btn');
+  const regBtn = document.getElementById('auth-tab-register-btn');
+  const loginPanel = document.getElementById('auth-panel-login');
+  const regPanel = document.getElementById('auth-panel-register');
+  if (!loginBtn || !regBtn || !loginPanel || !regPanel) return;
+
+  if (tab === 'login') {
+    loginBtn.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-[#171413]';
+    regBtn.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-200/80 dark:bg-white/10';
+    loginPanel.classList.remove('hidden');
+    regPanel.classList.add('hidden');
+  } else {
+    regBtn.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-[#171413]';
+    loginBtn.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-200/80 dark:bg-white/10';
+    regPanel.classList.remove('hidden');
+    loginPanel.classList.add('hidden');
+  }
+}
+
+function selectRegisterRole(roleCode) {
+  const hiddenInput = document.getElementById('reg-selected-role');
+  if (hiddenInput) hiddenInput.value = roleCode;
+
+  document.querySelectorAll('.js-reg-role-card').forEach(btn => {
+    const r = btn.getAttribute('data-reg-role');
+    if (r === roleCode) {
+      btn.className = 'js-reg-role-card p-3 rounded-2xl border-2 border-[#7C1D18] bg-[#7C1D18]/10 dark:bg-[#F2AE79]/15 text-left transition-all shadow-sm';
+    } else {
+      btn.className = 'js-reg-role-card p-3 rounded-2xl border border-stone-200 dark:border-white/10 bg-stone-100/70 dark:bg-white/5 text-left transition-all hover:border-[#7C1D18]/50';
+    }
+  });
+
+  const info = REGISTER_ROLE_DESCRIPTIONS[roleCode] || REGISTER_ROLE_DESCRIPTIONS.CLIENTE_B2C;
+  const banner = document.getElementById('reg-role-permissions-banner');
+  if (banner) {
+    banner.innerHTML = `<strong class="text-[#7C1D18] dark:text-[#F2AE79] block">${info.title}</strong><span class="opacity-85">${info.desc}</span>`;
+  }
+
+  const fnLabel = document.getElementById('reg-fullname-label');
+  const locHeading = document.getElementById('reg-location-heading');
+  const addrLabel = document.getElementById('reg-address-label');
+  if (fnLabel) fnLabel.textContent = info.fullnameLabel;
+  if (locHeading) locHeading.textContent = info.locationHeading;
+  if (addrLabel) addrLabel.textContent = info.addressLabel;
+
+  const expBlock = document.getElementById('reg-fields-exportador');
+  const mipBlock = document.getElementById('reg-fields-mipyme');
+  const tcpBlock = document.getElementById('reg-fields-tcp');
+  const cubaLocBlock = document.getElementById('reg-fields-cuba-location');
+  const b2cExtra = document.getElementById('reg-b2c-extra');
+  const bizDelivCfg = document.getElementById('reg-business-delivery-cfg');
+
+  if (expBlock) expBlock.classList.toggle('hidden', roleCode !== 'EXPORTADOR_B2B');
+  if (mipBlock) mipBlock.classList.toggle('hidden', roleCode !== 'MIPYME');
+  if (tcpBlock) tcpBlock.classList.toggle('hidden', roleCode !== 'TCP');
+  if (cubaLocBlock) cubaLocBlock.classList.toggle('hidden', roleCode === 'EXPORTADOR_B2B');
+  if (b2cExtra) b2cExtra.classList.toggle('hidden', roleCode !== 'CLIENTE_B2C');
+  if (bizDelivCfg) bizDelivCfg.classList.toggle('hidden', !(roleCode === 'MIPYME' || roleCode === 'TCP'));
+}
+
+function handleUserLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
+  const password = (document.getElementById('login-password-input').value || '').trim();
+
+  const found = (appState.users || []).find(u => u.email.toLowerCase() === email && (!u.password || u.password === password));
+  if (!found) {
+    showToast('Credenciales no encontradas. Verifica tu correo o crea una cuenta nueva.');
+    return;
+  }
+
+  activateUserSession(found);
+  closeUserAuthModal();
+}
+
+function quickDemoLogin(email) {
+  const found = (appState.users || []).find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!found) return;
+  activateUserSession(found);
+  closeUserAuthModal();
+}
+
+function handleUserRegisterSubmit(e) {
+  if (e) e.preventDefault();
+  const roleCode = document.getElementById('reg-selected-role').value || 'CLIENTE_B2C';
+  const fullName = (document.getElementById('reg-fullname').value || '').trim();
+  const phone = (document.getElementById('reg-phone').value || '').trim();
+  const email = (document.getElementById('reg-email').value || '').trim().toLowerCase();
+  const password = (document.getElementById('reg-password').value || '').trim();
+
+  if (!fullName || !email || !phone) {
+    showToast('Por favor completa nombre, teléfono y correo electrónico.');
+    return;
+  }
+
+  if (!Array.isArray(appState.users)) appState.users = [];
+  if (appState.users.some(u => u.email.toLowerCase() === email)) {
+    showToast('Este correo ya está registrado. Puedes iniciar sesión directamente.');
+    switchUserAuthTab('login');
+    document.getElementById('login-email-input').value = email;
+    return;
+  }
+
+  const province = document.getElementById('reg-province') ? document.getElementById('reg-province').value : 'La Habana';
+  const municipality = document.getElementById('reg-municipality') ? document.getElementById('reg-municipality').value : 'Plaza de la Revolución (El Vedado)';
+  const address = (document.getElementById('reg-address') && document.getElementById('reg-address').value.trim()) || `${municipality}, ${province}`;
+
+  const munList = CUBA_GEO[province] || CUBA_GEO["La Habana"];
+  const munCoords = munList.find(m => m.name === municipality) || munList[0];
+
+  const newUser = {
+    id: `u-${Date.now()}`,
+    role: roleCode,
+    email,
+    password,
+    fullName,
+    phone,
+    province: roleCode === 'EXPORTADOR_B2B' ? 'Artemisa' : province,
+    municipality: roleCode === 'EXPORTADOR_B2B' ? 'ZED Mariel (Terminal Portuaria B2B)' : municipality,
+    address,
+    createdAt: new Date().toISOString().slice(0, 10)
+  };
+
+  if (roleCode === 'EXPORTADOR_B2B') {
+    newUser.companyName = (document.getElementById('reg-exp-company').value || '').trim() || `${fullName} Export B2B`;
+    newUser.country = (document.getElementById('reg-exp-country').value || '').trim() || 'Internacional';
+    newUser.taxId = (document.getElementById('reg-exp-taxid').value || '').trim() || 'INT-B2B';
+    newUser.shippingLine = (document.getElementById('reg-exp-shipping').value || '').trim() || 'CIF Puerto del Mariel';
+  } else if (roleCode === 'MIPYME') {
+    newUser.companyName = (document.getElementById('reg-mip-company').value || '').trim() || `${fullName} S.U.R.L.`;
+    newUser.nit = (document.getElementById('reg-mip-nit').value || '').trim() || 'NIT-ONAT';
+    newUser.reeup = (document.getElementById('reg-mip-reeup').value || '').trim() || 'MIP-CUBA';
+    newUser.baseDeliveryFeeUsd = Number(document.getElementById('reg-biz-basefee').value || 2.00);
+    newUser.pricePerKmUsd = Number(document.getElementById('reg-biz-kmprice').value || 0.50);
+  } else if (roleCode === 'TCP') {
+    newUser.businessName = (document.getElementById('reg-tcp-business').value || '').trim() || `Proyecto TCP ${fullName}`;
+    newUser.ci = (document.getElementById('reg-tcp-ci').value || '').trim() || 'CI-TCP';
+    newUser.nit = newUser.ci;
+    newUser.licenseActivity = (document.getElementById('reg-tcp-activity').value || '').trim() || 'Comercialización Minorista';
+    newUser.baseDeliveryFeeUsd = Number(document.getElementById('reg-biz-basefee').value || 1.20);
+    newUser.pricePerKmUsd = Number(document.getElementById('reg-biz-kmprice').value || 0.35);
+  } else {
+    newUser.ci = (document.getElementById('reg-b2c-ci').value || '').trim();
+    newUser.reference = (document.getElementById('reg-b2c-ref').value || '').trim();
+  }
+
+  // Si es Proveedor B2B, Mipyme o TCP, crear su tienda oficial e inventario administrable en Mercapros
+  if (roleCode === 'EXPORTADOR_B2B' || roleCode === 'MIPYME' || roleCode === 'TCP') {
+    const newVendorId = `v-custom-${Date.now()}`;
+    const storeName = newUser.companyName || newUser.businessName || fullName;
+    const storeBadge =
+      roleCode === 'EXPORTADOR_B2B'
+        ? `Exportador (${newUser.country})`
+        : roleCode === 'MIPYME'
+        ? 'Mipyme Mayorista & Minorista'
+        : 'TCP Venta Minorista';
+
+    const storeDesc =
+      roleCode === 'EXPORTADOR_B2B'
+        ? `Proveedor internacional de contenedores (${newUser.shippingLine}). Registro: ${newUser.taxId}.`
+        : roleCode === 'MIPYME'
+        ? `Mipyme oficial en ${municipality}, ${province}. NIT: ${newUser.nit}. Ventas mayoristas y minoristas con entrega por km.`
+        : `Proyecto TCP autorizado (${newUser.licenseActivity}) en ${municipality}. Entregas minoristas a domicilio.`;
+
+    const newVendorObj = {
+      id: newVendorId,
+      name: storeName,
+      logo: 'assets/mercapros-logo.webp',
+      role: roleCode,
+      badge: storeBadge,
+      province: newUser.province,
+      municipality: newUser.municipality,
+      lat: roleCode === 'EXPORTADOR_B2B' ? 22.9920 : munCoords.lat,
+      lng: roleCode === 'EXPORTADOR_B2B' ? -82.7530 : munCoords.lng,
+      baseDeliveryFeeUsd: roleCode === 'EXPORTADOR_B2B' ? 0 : Number(newUser.baseDeliveryFeeUsd || 1.50),
+      pricePerKmUsd: roleCode === 'EXPORTADOR_B2B' ? 0 : Number(newUser.pricePerKmUsd || 0.45),
+      freeShippingThresholdUsd: 100,
+      rating: 5.0,
+      reviewsCount: 1,
+      gmapsUrl: 'https://www.google.com/maps/search/?api=1&query=La+Habana+Cuba',
+      whatsapp: phone.replace(/[^0-9]/g, '') || ADMIN_WHATSAPP_NUMBER,
+      verified: true,
+      isFeaturedStore: false,
+      description: storeDesc
+    };
+
+    appState.vendors.push(newVendorObj);
+    newUser.vendorId = newVendorId;
+  }
+
+  appState.users.unshift(newUser);
+  activateUserSession(newUser);
+  closeUserAuthModal();
+  showToast(`¡Cuenta creada con éxito! Bienvenido, ${newUser.companyName || newUser.businessName || newUser.fullName}`);
+}
+
+function activateUserSession(userObj) {
+  appState.currentUser = userObj;
+  appState.currentRole = userObj.role || 'CLIENTE_B2C';
+
+  if (userObj.province && CUBA_GEO[userObj.province]) {
+    appState.selectedProvince = userObj.province;
+    const list = CUBA_GEO[userObj.province];
+    const foundMun = list.find(m => m.name === userObj.municipality) || list[0];
+    if (foundMun) {
+      appState.selectedMunicipality = foundMun.name;
+      appState.userGps.lat = foundMun.lat;
+      appState.userGps.lng = foundMun.lng;
+    }
+  }
+  if (userObj.address) {
+    appState.userGps.address = userObj.address;
+  }
+
+  if (userObj.vendorId) {
+    appState.activeVendorId = userObj.vendorId;
+    isAdminAuthenticated = true;
+  } else {
+    isAdminAuthenticated = false;
+  }
+
+  saveMercaprosState(appState);
+  populateProvinceAndMunicipalitySelectors();
+  updateAuthHeaderUI();
+  renderRoleBar();
+  renderStoresSection();
+  renderCatalog();
+  updateCartUI();
+  updateGpsHeaderBadge();
+  showToast(`Sesión activa: ${userObj.companyName || userObj.businessName || userObj.fullName} (${ROLE_MATRIX[appState.currentRole]?.label || userObj.role})`);
+}
+
+function logoutCurrentUser() {
+  appState.currentUser = null;
+  appState.currentRole = 'ALL_VIEW';
+  isAdminAuthenticated = false;
+  saveMercaprosState(appState);
+  updateAuthHeaderUI();
+  renderRoleBar();
+  renderCatalog();
+  renderActiveSessionInsideAuthModal();
+  showToast('Sesión cerrada correctamente.');
+}
+
+function updateAuthHeaderUI() {
+  const labelEl = document.getElementById('header-user-auth-label');
+  const goldPill = document.getElementById('header-admin-gold-pill');
+
+  if (appState.currentUser) {
+    const shortName = (appState.currentUser.companyName || appState.currentUser.businessName || appState.currentUser.fullName || 'Mi Cuenta').slice(0, 18);
+    if (labelEl) labelEl.textContent = shortName;
+    if (goldPill) {
+      if (appState.currentUser.vendorId) {
+        goldPill.classList.remove('hidden');
+      } else {
+        goldPill.classList.add('hidden');
+      }
+    }
+  } else {
+    if (labelEl) labelEl.textContent = 'Acceder / Registro';
+    if (goldPill && !isAdminAuthenticated) {
+      goldPill.classList.add('hidden');
+    }
+  }
+}
+
+function renderActiveSessionInsideAuthModal() {
+  const box = document.getElementById('auth-active-session-box');
+  if (!box) return;
+
+  if (!appState.currentUser) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  const u = appState.currentUser;
+  const roleInfo = REGISTER_ROLE_DESCRIPTIONS[u.role] || REGISTER_ROLE_DESCRIPTIONS.CLIENTE_B2C;
+
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">${roleInfo.title}</span>
+        <h4 class="font-display font-bold text-sm sm:text-base">${u.companyName || u.businessName || u.fullName}</h4>
+        <p class="text-[11px] opacity-80">${u.email} • ${u.phone || ''} ${u.municipality ? `• ${u.municipality}` : ''}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        ${u.vendorId ? `
+          <button type="button" onclick="closeUserAuthModal(); openAdminModal();" class="px-3 py-2 rounded-xl bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-[#171413] font-extrabold text-xs">
+            <i class="fa-solid fa-sliders mr-1"></i>Mi Dashboard
+          </button>
+        ` : ''}
+        <button type="button" onclick="logoutCurrentUser()" class="px-3 py-2 rounded-xl bg-red-600/15 text-red-700 dark:text-red-300 font-bold text-xs">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  `;
+}
+

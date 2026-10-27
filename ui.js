@@ -8,6 +8,8 @@
     'delivery-map-modal': () => closeDeliveryMapModal(),
     'admin-login-modal': () => closeAdminModals(),
     'admin-dashboard-modal': () => closeAdminModals(),
+    'product-detail-modal': () => closeProductDetailModal(),
+    'user-auth-modal': () => closeUserAuthModal(),
     'cart-drawer-modal': () => toggleCartDrawer(false),
     'mobile-drawer': () => document.getElementById('mobile-drawer').classList.add('hidden')
   };

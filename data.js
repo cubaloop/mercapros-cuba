@@ -2,7 +2,7 @@
 // MERCAPROS CUBA - MOTOR DE DATOS DUAL-LAYER (LOCALSTORAGE + SUPABASE)
 // ============================================================================
 
-const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v31_whitebg_db';
+const MERCAPROS_STORAGE_KEY = 'mercapros_cuba_v32_auth_db';
 
 // Provincias y Municipios de Cuba con Coordenadas GPS Reales para Enrutamiento Haversine
 const CUBA_GEO = {
@@ -721,12 +721,83 @@ const DEFAULT_ORDERS = [
   }
 ];
 
+const DEFAULT_USERS = [
+  {
+    id: "u-exp-01",
+    role: "EXPORTADOR_B2B",
+    email: "exportador@wssnd.com",
+    password: "123",
+    fullName: "Dirección Comercial WSSND",
+    phone: "+971508379080",
+    companyName: "WSSND SKYLINK",
+    country: "Emiratos Árabes Unidos / Turquía / Brasil",
+    taxId: "INT-EXP-994820",
+    shippingLine: "CMA-CGM, CTM Directo, NIRINT",
+    incotermPort: "CIF Puerto del Mariel, Cuba",
+    vendorId: "v-wssnd-01",
+    createdAt: "2026-10-25"
+  },
+  {
+    id: "u-mip-01",
+    role: "MIPYME",
+    email: "mipyme@delvalle.cu",
+    password: "123",
+    fullName: "Carlos Manuel Del Valle",
+    phone: "+5352884411",
+    companyName: "Alimentos Del Valle S.U.R.L.",
+    nit: "50004192837",
+    reeup: "MIP-2024-1184",
+    province: "La Habana",
+    municipality: "Plaza de la Revolución (El Vedado)",
+    address: "Calle 23 #814 entre A y B, El Vedado",
+    baseDeliveryFeeUsd: 2.00,
+    pricePerKmUsd: 0.55,
+    vendorId: "v-mip-01",
+    createdAt: "2026-10-25"
+  },
+  {
+    id: "u-tcp-01",
+    role: "TCP",
+    email: "tcp@lavibora.cu",
+    password: "123",
+    fullName: "Yosvani Morales Pérez",
+    phone: "+5353912045",
+    businessName: "Mercadito La Víbora Express (TCP)",
+    ci: "85041219482",
+    nit: "08504121948",
+    licenseActivity: "Comercialización Minorista de Alimentos y Aseo",
+    province: "La Habana",
+    municipality: "Diez de Octubre (Víbora)",
+    address: "Calzada de 10 de Octubre #1204, La Víbora",
+    baseDeliveryFeeUsd: 1.20,
+    pricePerKmUsd: 0.35,
+    vendorId: "v-tcp-01",
+    createdAt: "2026-10-25"
+  },
+  {
+    id: "u-cli-01",
+    role: "CLIENTE_B2C",
+    email: "cliente@hogar.cu",
+    password: "123",
+    fullName: "Elena Rodríguez Gómez",
+    phone: "+5354128900",
+    ci: "90081522314",
+    province: "La Habana",
+    municipality: "Plaza de la Revolución (El Vedado)",
+    address: "Calle 23 esq. L, Apto 4B, El Vedado, La Habana",
+    reference: "Edificio frente al cine Yara, bajos reja negra",
+    createdAt: "2026-10-25"
+  }
+];
+
 function loadMercaprosState() {
   try {
     const raw = localStorage.getItem(MERCAPROS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.products) && parsed.products.length > 0) {
+        if (!Array.isArray(parsed.users)) parsed.users = DEFAULT_USERS;
+        if (typeof parsed.currentUser === 'undefined') parsed.currentUser = null;
         return parsed;
       }
     }
@@ -734,8 +805,10 @@ function loadMercaprosState() {
     console.warn("[Mercapros] Error cargando localStorage, restaurando estado maestro:", e);
   }
   const initialState = {
-    version: "3.1.0",
+    version: "3.2.0",
     currentRole: "ALL_VIEW",
+    currentUser: null,
+    users: DEFAULT_USERS,
     currency: "USD",
     rates: { USD: 1, CUP: 320, MLC: 1.15 },
     lowDataMode: false,

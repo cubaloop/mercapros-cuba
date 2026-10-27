@@ -124,6 +124,12 @@
           <span class="hidden md:inline">Admin</span>
         </button>
 
+        <!-- Botón de Autenticación / Creación de Usuario (4 Niveles) -->
+        <button id="header-user-auth-btn" onclick="openUserAuthModal()" aria-label="Cuenta de usuario" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-user-check text-[#7C1D18] dark:text-[#F2AE79]"></i>
+          <span id="header-user-auth-label" class="hidden md:inline">Acceder / Registro</span>
+        </button>
+
         <!-- Dashboard Negocios -->
         <button onclick="openAdminModal()" aria-label="Panel de negocios" class="px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300/80 dark:border-white/10 hover:border-[#7C1D18] text-xs font-bold flex items-center gap-1.5">
           <i class="fa-solid fa-sliders text-[#7C1D18] dark:text-[#F2AE79]"></i>
@@ -137,7 +143,7 @@
 
         <!-- Carrito / Ticket -->
         <button onclick="toggleCartDrawer(true)" aria-label="Abrir carrito" class="relative px-3.5 py-2 rounded-xl bg-[#2A2522] dark:bg-[#F2AE79] text-[#F7F5F0] dark:text-[#171413] font-bold text-xs flex items-center gap-2 shadow-sm">
-          <i class="fa-solid fa-bag-shopping"></i>
+          <i class="fa-solid fa-cart-shopping"></i>
           <span class="js-cart-count px-1.5 py-0.5 rounded-full bg-[#7C1D18] text-white text-[10px] font-extrabold">0</span>
         </button>
       </div>
@@ -184,16 +190,16 @@
     </div>
   </header>
 
-  <!-- CONTENIDO PRINCIPAL LIMPIO -->
+  <!-- CONTENIDO PRINCIPAL LIMPIO (PRODUCTOS PRIMERO, TIENDAS AL FILTRAR CATEGORÍA "TIENDAS") -->
   <main id="main-content" class="market-main flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-6">
 
-    <!-- 1. BARRA DE CATEGORÍAS (CON "TIENDAS" DESTACADA) -->
+    <!-- 1. BARRA DE CATEGORÍAS -->
     <section class="space-y-3">
       <div id="categories-scroll-bar" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"></div>
     </section>
 
-    <!-- 2. SECCIÓN DE TIENDAS OFICIALES (WSSND SKYLINK PRIMERA TIENDA) -->
-    <section id="stores-showcase-section" class="stores-section space-y-3">
+    <!-- 2. PANTALLA DE TIENDAS OFICIALES (OCULTA POR DEFECTO; ABRE AL FILTRAR CATEGORÍA "TIENDAS") -->
+    <section id="stores-showcase-section" class="stores-section space-y-3 hidden">
       <div class="flex items-center justify-between">
         <h2 class="section-title font-display text-lg sm:text-xl font-bold flex items-center gap-2">
           <i class="fa-solid fa-store text-[#7C1D18] dark:text-[#F2AE79] text-base"></i>
@@ -542,6 +548,256 @@
     </div>
   </div>
 
+  <!-- PANTALLA INDEPENDIENTE DE DETALLE DEL PRODUCTO (AL HACER CLIC EN UN PRODUCTO) -->
+  <div id="product-detail-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-7">
+      <div class="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3 mb-5">
+        <div class="flex items-center gap-2">
+          <span id="detail-modal-sku" class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-white/10 font-mono text-[11px] font-bold text-[#7C1D18] dark:text-[#F2AE79]">SKU</span>
+          <span id="detail-modal-category" class="text-xs font-semibold opacity-70">Categoría</span>
+        </div>
+        <button onclick="closeProductDetailModal()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 flex items-center justify-center font-bold" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="product-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- SISTEMA DE AUTENTICACIÓN Y CREACIÓN DE USUARIOS (4 NIVELES: PROVEEDOR, MIPYME, TCP Y CLIENTE DOMICILIO) -->
+  <div id="user-auth-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 rounded-3xl max-w-3xl w-full max-h-[93vh] overflow-y-auto shadow-2xl p-5 sm:p-7 space-y-5">
+      <div class="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="w-9 h-9 rounded-2xl bg-[#7C1D18] text-white flex items-center justify-center">
+            <i class="fa-solid fa-user-shield"></i>
+          </span>
+          <div>
+            <h3 class="font-display text-lg sm:text-xl font-bold leading-tight">Cuenta y Registro Mercapros Cuba</h3>
+            <p class="text-[11px] opacity-75">Proveedores Internacionales, Mipymes, TCP y Clientes a Domicilio</p>
+          </div>
+        </div>
+        <button onclick="closeUserAuthModal()" class="w-9 h-9 rounded-full bg-stone-200 dark:bg-white/10 flex items-center justify-center font-bold" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- RESUMEN DE SESIÓN ACTIVA (CUANDO EL USUARIO YA INICIÓ SESIÓN) -->
+      <div id="auth-active-session-box" class="hidden p-4 rounded-2xl bg-stone-100 dark:bg-white/5 border border-[#7C1D18]/40 space-y-3 text-xs"></div>
+
+      <!-- SELECTOR DE PESTAÑAS: INICIAR SESIÓN / CREAR CUENTA -->
+      <div id="auth-tabs-bar" class="flex items-center gap-2 border-b border-stone-200 dark:border-white/10 pb-3">
+        <button id="auth-tab-login-btn" onclick="switchUserAuthTab('login')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold bg-[#2A2522] text-white dark:bg-[#F2AE79] dark:text-[#171413]">
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Iniciar Sesión
+        </button>
+        <button id="auth-tab-register-btn" onclick="switchUserAuthTab('register')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-200/80 dark:bg-white/10">
+          <i class="fa-solid fa-user-plus mr-1.5"></i>Crear Cuenta Nueva
+        </button>
+      </div>
+
+      <!-- PESTAÑA 1: INICIAR SESIÓN -->
+      <div id="auth-panel-login" class="space-y-4 text-xs">
+        <form onsubmit="handleUserLoginSubmit(event)" class="space-y-3">
+          <div>
+            <label class="font-bold block mb-1">Correo Electrónico:</label>
+            <input id="login-email-input" type="email" required placeholder="tu-correo@empresa.cu" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Contraseña:</label>
+            <input id="login-password-input" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
+          </div>
+          <button type="submit" class="w-full py-3 rounded-2xl bg-[#7C1D18] hover:bg-[#5D1713] text-white font-extrabold text-xs shadow-md transition-all">
+            Entrar a mi Cuenta
+          </button>
+        </form>
+
+        <!-- Acceso Rápido de Demostración para los 4 Niveles -->
+        <div class="pt-3 border-t border-stone-200 dark:border-white/10 space-y-2">
+          <span class="text-[11px] font-bold opacity-75 block">Cuentas verificadas de prueba rápida (1 clic):</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button type="button" onclick="quickDemoLogin('exportador@wssnd.com')" class="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:border-[#7C1D18] border border-stone-200 dark:border-white/10 text-left">
+              <span class="font-extrabold text-[#7C1D18] dark:text-[#F2AE79] block">1. Proveedor Extranjero</span>
+              <span class="text-[11px] opacity-75">WSSND SKYLINK (Contenedores CIF)</span>
+            </button>
+            <button type="button" onclick="quickDemoLogin('mipyme@delvalle.cu')" class="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:border-[#7C1D18] border border-stone-200 dark:border-white/10 text-left">
+              <span class="font-extrabold text-[#7C1D18] dark:text-[#F2AE79] block">2. Mipyme Cubana</span>
+              <span class="text-[11px] opacity-75">Alimentos Del Valle S.U.R.L.</span>
+            </button>
+            <button type="button" onclick="quickDemoLogin('tcp@lavibora.cu')" class="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:border-[#7C1D18] border border-stone-200 dark:border-white/10 text-left">
+              <span class="font-extrabold text-[#7C1D18] dark:text-[#F2AE79] block">3. TCP Cuenta Propia</span>
+              <span class="text-[11px] opacity-75">Mercadito La Víbora (Vende Minorista)</span>
+            </button>
+            <button type="button" onclick="quickDemoLogin('cliente@hogar.cu')" class="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:border-[#7C1D18] border border-stone-200 dark:border-white/10 text-left">
+              <span class="font-extrabold text-[#7C1D18] dark:text-[#F2AE79] block">4. Cliente a Domicilio</span>
+              <span class="text-[11px] opacity-75">Elena Rodríguez (Compra Hogar)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 2: CREAR CUENTA (FORMULARIO DINÁMICO SEGÚN NIVEL DE USUARIO) -->
+      <div id="auth-panel-register" class="hidden space-y-4 text-xs">
+        <div>
+          <label class="font-bold block mb-2">1. Selecciona el Tipo de Cuenta a Crear:</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" data-reg-role="CLIENTE_B2C" onclick="selectRegisterRole('CLIENTE_B2C')" class="js-reg-role-card p-3 rounded-2xl border text-left transition-all">
+              <i class="fa-solid fa-house-user text-base text-[#7C1D18] dark:text-[#F2AE79] mb-1 block"></i>
+              <span class="font-extrabold block text-xs">Cliente Hogar</span>
+              <span class="text-[10px] opacity-75 block">Compras a domicilio</span>
+            </button>
+            <button type="button" data-reg-role="TCP" onclick="selectRegisterRole('TCP')" class="js-reg-role-card p-3 rounded-2xl border text-left transition-all">
+              <i class="fa-solid fa-store text-base text-[#7C1D18] dark:text-[#F2AE79] mb-1 block"></i>
+              <span class="font-extrabold block text-xs">TCP</span>
+              <span class="text-[10px] opacity-75 block">Vende solo minorista</span>
+            </button>
+            <button type="button" data-reg-role="MIPYME" onclick="selectRegisterRole('MIPYME')" class="js-reg-role-card p-3 rounded-2xl border text-left transition-all">
+              <i class="fa-solid fa-building-wheat text-base text-[#7C1D18] dark:text-[#F2AE79] mb-1 block"></i>
+              <span class="font-extrabold block text-xs">Mipyme</span>
+              <span class="text-[10px] opacity-75 block">Mayorista y minorista</span>
+            </button>
+            <button type="button" data-reg-role="EXPORTADOR_B2B" onclick="selectRegisterRole('EXPORTADOR_B2B')" class="js-reg-role-card p-3 rounded-2xl border text-left transition-all">
+              <i class="fa-solid fa-ship text-base text-[#7C1D18] dark:text-[#F2AE79] mb-1 block"></i>
+              <span class="font-extrabold block text-xs">Proveedor B2B</span>
+              <span class="text-[10px] opacity-75 block">Exporta contenedores</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Banda Informativa de Permisos del Nivel Seleccionado -->
+        <div id="reg-role-permissions-banner" class="p-3 rounded-2xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-[11px] font-semibold"></div>
+
+        <form id="user-register-form" onsubmit="handleUserRegisterSubmit(event)" class="space-y-3">
+          <input id="reg-selected-role" type="hidden" value="CLIENTE_B2C" />
+
+          <!-- Datos Comunes de Identidad y Acceso -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label id="reg-fullname-label" class="font-bold block mb-1">Nombre y Apellidos del Titular / Destinatario:</label>
+              <input id="reg-fullname" type="text" required placeholder="Ej: Juan Pérez Rodríguez" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Teléfono / WhatsApp de Contacto:</label>
+              <input id="reg-phone" type="tel" required placeholder="Ej: +53 5xxxxxxx" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Correo Electrónico:</label>
+              <input id="reg-email" type="email" required placeholder="correo@ejemplo.com" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Contraseña de Acceso:</label>
+              <input id="reg-password" type="password" required placeholder="Mínimo 4 caracteres" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+            </div>
+          </div>
+
+          <!-- BLOQUE A: DATOS ESPECÍFICOS DE PROVEEDOR / EXPORTADOR EXTRANJERO -->
+          <div id="reg-fields-exportador" class="hidden p-3.5 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
+            <h4 class="font-display font-bold text-sm text-[#7C1D18] dark:text-[#F2AE79]">Datos de Empresa Exportadora Internacional (Contenedores)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-bold block mb-1">Razón Social / Empresa Exportadora:</label>
+                <input id="reg-exp-company" type="text" placeholder="Ej: WSSND SKYLINK LTD" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">País de Origen:</label>
+                <input id="reg-exp-country" type="text" placeholder="Ej: España, Turquía, Brasil, Panamá..." class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Registro Mercantil / Tax ID / NIF:</label>
+                <input id="reg-exp-taxid" type="text" placeholder="Número de Registro Internacional" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Navieras y Puerto Destino en Cuba:</label>
+                <input id="reg-exp-shipping" type="text" placeholder="Ej: CMA-CGM / CIF Puerto del Mariel" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE B: DATOS ESPECÍFICOS DE MIPYME CUBANA -->
+          <div id="reg-fields-mipyme" class="hidden p-3.5 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
+            <h4 class="font-display font-bold text-sm text-[#7C1D18] dark:text-[#F2AE79]">Datos Oficiales de la Mipyme (Compra Contenedor/Mayorista • Vende Mayor y Menor)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2">
+                <label class="font-bold block mb-1">Denominación Social Oficial (S.U.R.L. / S.R.L.):</label>
+                <input id="reg-mip-company" type="text" placeholder="Ej: Distribuidora Caribeña S.U.R.L." class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Código NIT (ONAT):</label>
+                <input id="reg-mip-nit" type="text" placeholder="11 dígitos NIT" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Código REEUP / Registro Mercantil:</label>
+                <input id="reg-mip-reeup" type="text" placeholder="Ej: MIP-2025-0412" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE C: DATOS ESPECÍFICOS DE TCP (TRABAJADOR POR CUENTA PROPIA) -->
+          <div id="reg-fields-tcp" class="hidden p-3.5 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
+            <h4 class="font-display font-bold text-sm text-[#7C1D18] dark:text-[#F2AE79]">Datos Oficiales del TCP (Compra Mayor/Menor • Vende Solo Minorista)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-bold block mb-1">Nombre Comercial del Proyecto / Negocio:</label>
+                <input id="reg-tcp-business" type="text" placeholder="Ej: Mercadito El Rápido" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Carnet de Identidad (CI) / NIT:</label>
+                <input id="reg-tcp-ci" type="text" placeholder="11 dígitos CI / NIT ONAT" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="font-bold block mb-1">Actividad Autorizada / Licencia TCP:</label>
+                <input id="reg-tcp-activity" type="text" placeholder="Ej: Comercialización minorista de alimentos y productos del agro" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE D: UBICACIÓN EN CUBA (COMÚN PARA MIPYME, TCP Y CLIENTE A DOMICILIO) -->
+          <div id="reg-fields-cuba-location" class="p-3.5 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
+            <h4 id="reg-location-heading" class="font-display font-bold text-sm text-[#7C1D18] dark:text-[#F2AE79]">Dirección Exacta para Entrega a Domicilio en Cuba</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-bold block mb-1">Provincia:</label>
+                <select id="reg-province" onchange="onRegProvinceChange(this.value)" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold"></select>
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Municipio:</label>
+                <select id="reg-municipality" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold"></select>
+              </div>
+              <div class="sm:col-span-2">
+                <label id="reg-address-label" class="font-bold block mb-1">Dirección Exacta (Calle, #, Apto, Entrecalles, Reparto):</label>
+                <input id="reg-address" type="text" placeholder="Ej: Calle 23 #410 apto 2 entre J y K, El Vedado" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+            </div>
+
+            <!-- Campos extra solo para Cliente B2C (CI receptor y Punto de Referencia) -->
+            <div id="reg-b2c-extra" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="font-bold block mb-1">Carnet de Identidad (CI) en Cuba:</label>
+                <input id="reg-b2c-ci" type="text" placeholder="11 dígitos de quien recibe" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Punto de Referencia de la Vivienda:</label>
+                <input id="reg-b2c-ref" type="text" placeholder="Ej: Frente al parque, bajos reja blanca" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
+              </div>
+            </div>
+
+            <!-- Campos extra de Tarifa por Km (solo para Mipyme y TCP) -->
+            <div id="reg-business-delivery-cfg" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-stone-200 dark:border-white/10">
+              <div>
+                <label class="font-bold block mb-1">Tarifa Base de Domicilio (USD):</label>
+                <input id="reg-biz-basefee" type="number" step="0.10" value="1.50" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
+              </div>
+              <div>
+                <label class="font-bold block mb-1">Precio por Kilómetro $/Km (USD):</label>
+                <input id="reg-biz-kmprice" type="number" step="0.05" value="0.45" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-bold" />
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs shadow-lg transition-all">
+            <i class="fa-solid fa-user-check mr-1.5"></i>Crear Cuenta y Activar Perfil
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- DRAWER DEL CARRITO (GENERACIÓN Y ENVÍO DE TICKET DE COMPRA AL WHATSAPP) -->
   <div id="cart-drawer-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
     <div class="bg-[#FFFFFF] dark:bg-[#211D1B] w-full max-w-md h-full p-5 flex flex-col justify-between shadow-2xl border-l border-stone-200 dark:border-white/10 overflow-y-auto">
@@ -561,8 +817,9 @@
       <div class="space-y-2.5 pt-4 border-t border-stone-200 dark:border-white/10 text-xs">
         <input id="checkout-customer-name" type="text" placeholder="Nombre del Comprador o Empresa (Mipyme / TCP)" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15 font-semibold" />
         <input id="checkout-customer-notes" type="text" placeholder="Notas del pedido (Puerto, teléfono o referencia)" class="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-black/30 border border-stone-300 dark:border-white/15" />
-        <button onclick="submitCheckoutOrder()" class="w-full py-3.5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs shadow-lg transition-all">
-          Comprar
+        <button onclick="submitCheckoutOrder()" class="w-full py-3.5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>Enviar Ticket de Pedido</span>
         </button>
       </div>
     </div>
@@ -585,8 +842,11 @@
         </button>
 
         <div class="space-y-1 text-xs font-bold">
+          <button onclick="openUserAuthModal(); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
+            <i class="fa-solid fa-user-check text-[#7C1D18] w-5"></i> Iniciar Sesión / Crear Cuenta
+          </button>
           <button onclick="selectCategory('tiendas'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
-            <i class="fa-solid fa-store text-[#7C1D18] w-5"></i> Tiendas (WSSND SKYLINK)
+            <i class="fa-solid fa-store text-[#7C1D18] w-5"></i> Tiendas Oficiales
           </button>
           <button onclick="selectCategory('contenedores-b2b'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/10 flex items-center gap-2">
             <i class="fa-solid fa-ship text-emerald-700 w-5"></i> Contenedores CIF Mariel
