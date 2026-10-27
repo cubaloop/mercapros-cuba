@@ -798,6 +798,11 @@ function loadMercaprosState() {
       if (parsed && Array.isArray(parsed.products) && parsed.products.length > 0) {
         if (!Array.isArray(parsed.users)) parsed.users = DEFAULT_USERS;
         if (typeof parsed.currentUser === 'undefined') parsed.currentUser = null;
+        if (parsed.currency === 'MLC' || !['USD', 'EUR', 'USDT', 'CUP'].includes(parsed.currency)) {
+          parsed.currency = 'USD';
+        }
+        parsed.rates = { USD: 1, EUR: 0.92, USDT: 1.00, CUP: 320, ...(parsed.rates || {}) };
+        delete parsed.rates.MLC;
         return parsed;
       }
     }
@@ -805,12 +810,12 @@ function loadMercaprosState() {
     console.warn("[Mercapros] Error cargando localStorage, restaurando estado maestro:", e);
   }
   const initialState = {
-    version: "3.2.0",
+    version: "3.3.0",
     currentRole: "ALL_VIEW",
     currentUser: null,
     users: DEFAULT_USERS,
     currency: "USD",
-    rates: { USD: 1, CUP: 320, MLC: 1.15 },
+    rates: { USD: 1, EUR: 0.92, USDT: 1.00, CUP: 320 },
     lowDataMode: false,
     theme: "light",
     selectedProvince: "La Habana",

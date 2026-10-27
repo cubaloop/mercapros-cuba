@@ -121,29 +121,34 @@ function isWholesaleContext() {
   );
 }
 
+const CURRENCY_OPTIONS_SUPPLIERS = [
+  { value: 'USD', label: 'Moneda: USD (Dólares)' },
+  { value: 'EUR', label: 'Moneda: EUR (Euros)' },
+  { value: 'USDT', label: 'Moneda: USDT' }
+];
+
+const CURRENCY_OPTIONS_GENERAL = [
+  { value: 'USD', label: 'Moneda: USD (Dólares)' },
+  { value: 'EUR', label: 'Moneda: EUR (Euros)' },
+  { value: 'USDT', label: 'Moneda: USDT' },
+  { value: 'CUP', label: 'Moneda: CUP' }
+];
+
 function syncCurrencySelectorOptions() {
   const wholesaleMode = isWholesaleContext();
-  if (wholesaleMode && appState.currency === 'CUP') {
+  const allowedList = wholesaleMode ? CURRENCY_OPTIONS_SUPPLIERS : CURRENCY_OPTIONS_GENERAL;
+  const allowedValues = allowedList.map(o => o.value);
+
+  if (!allowedValues.includes(appState.currency)) {
     appState.currency = 'USD';
     saveMercaprosState(appState);
   }
 
   const currSelects = document.querySelectorAll('.js-currency-select');
   currSelects.forEach(s => {
-    const cupOpt = s.querySelector('option[value="CUP"]');
-    if (wholesaleMode) {
-      if (cupOpt) cupOpt.remove();
-    } else if (!cupOpt) {
-      const mlcOpt = s.querySelector('option[value="MLC"]');
-      const newCup = document.createElement('option');
-      newCup.value = 'CUP';
-      newCup.textContent = 'Moneda: CUP';
-      if (mlcOpt) {
-        s.insertBefore(newCup, mlcOpt);
-      } else {
-        s.appendChild(newCup);
-      }
-    }
+    s.innerHTML = allowedList
+      .map(opt => `<option value="${opt.value}" ${opt.value === appState.currency ? 'selected' : ''}>${opt.label}</option>`)
+      .join('');
     s.value = appState.currency || 'USD';
   });
 }
@@ -151,17 +156,27 @@ function syncCurrencySelectorOptions() {
 function formatMoney(amountUsd, forceNoCup = false) {
   const val = Number(amountUsd || 0);
   let curr = appState.currency || 'USD';
-  // Regla: las opciones mayoristas y de contenedores NUNCA muestran moneda CUP
+  if (curr === 'MLC') curr = 'USD';
+
+  // Proveedores / Mayoristas / Contenedores: solo USD, EUR y USDT (nunca CUP)
   if ((forceNoCup || isWholesaleContext()) && curr === 'CUP') {
     curr = 'USD';
   }
+
   if (curr === 'CUP') {
-    const cup = Math.round(val * (appState.rates.CUP || 320));
+    const cupRate = (appState.rates && appState.rates.CUP) || 320;
+    const cup = Math.round(val * cupRate);
     return `${cup.toLocaleString('es-CU')} CUP`;
   }
-  if (curr === 'MLC') {
-    const mlc = (val * (appState.rates.MLC || 1.15)).toFixed(2);
-    return `$${Number(mlc).toLocaleString('en-US', { minimumFractionDigits: 2 })} MLC`;
+  if (curr === 'EUR') {
+    const eurRate = (appState.rates && appState.rates.EUR) || 0.92;
+    const eur = (val * eurRate).toFixed(2);
+    return `€${Number(eur).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+  }
+  if (curr === 'USDT') {
+    const usdtRate = (appState.rates && appState.rates.USDT) || 1.00;
+    const usdt = (val * usdtRate).toFixed(2);
+    return `${Number(usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
   }
   return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 }
@@ -238,7 +253,9 @@ function toggleThemeMode() {
 function changeCurrency(newCurr) {
   if (isWholesaleContext() && newCurr === 'CUP') {
     appState.currency = 'USD';
-    showToast('Las opciones mayoristas operan exclusivamente en USD o MLC.');
+    showToast('Para proveedores y mayoristas solo están disponibles USD, EUR y USDT.');
+  } else if (!['USD', 'EUR', 'USDT', 'CUP'].includes(newCurr)) {
+    appState.currency = 'USD';
   } else {
     appState.currency = newCurr;
   }
@@ -643,7 +660,7 @@ function renderCatalog() {
     // Bloque minimalista de Precio + Unidad de Medida (Mayorista y Contenedores nunca muestran CUP)
     const pricingBlock = `
       <div onclick="openProductDetailModal('${p.id}')" class="product-price cursor-pointer p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
-        <div class="text-lg font-extrabold tracking-tight">${formatMoney(primaryPriceUsd, isPrimaryWholesaleOrB2B).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
+        <div class="text-lg font-extrabold tracking-tight">${formatMoney(primaryPriceUsd, isPrimaryWholesaleOrB2B).replace(/ (USD|EUR|USDT|CUP)$/, ' <small class="price-currency">$1</small>')}</div>
         <div class="text-[11px] font-semibold opacity-80 mt-0.5" title="${primaryUnitText}">${primaryUnitText}</div>
       </div>
     `;

@@ -28,7 +28,7 @@
       "@type": "Country",
       "name": "Cuba"
     },
-    "currenciesAccepted": "USD, CUP, MLC"
+    "currenciesAccepted": "USD, EUR, USDT, CUP"
   }
   </script>
 
@@ -206,7 +206,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           <!-- Filtro 1: Ordenar Por -->
           <div>
             <label for="catalog-sort-select" class="font-bold text-[11px] opacity-75 block mb-1">Ordenar por:</label>
@@ -228,6 +228,17 @@
           <div>
             <label for="filter-panel-vendor-select" class="font-bold text-[11px] opacity-75 block mb-1">Tienda / Proveedor:</label>
             <select id="filter-panel-vendor-select" onchange="setVendorFilterFromPanel(this.value)" aria-label="Filtrar por tienda" class="w-full px-3 py-2 rounded-xl bg-[#F7F5F0] dark:bg-[#171413] border border-stone-300 dark:border-white/15 font-bold text-xs"></select>
+          </div>
+
+          <!-- Filtro 4: Moneda de Visualización -->
+          <div>
+            <label for="filter-panel-currency-select" class="font-bold text-[11px] opacity-75 block mb-1">Moneda:</label>
+            <select id="filter-panel-currency-select" onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select w-full px-3 py-2 rounded-xl bg-[#F7F5F0] dark:bg-[#171413] border border-stone-300 dark:border-white/15 font-bold text-xs">
+              <option value="USD">Moneda: USD (Dólares)</option>
+              <option value="EUR">Moneda: EUR (Euros)</option>
+              <option value="USDT">Moneda: USDT</option>
+              <option value="CUP">Moneda: CUP</option>
+            </select>
           </div>
         </div>
       </div>
@@ -856,8 +867,9 @@
           <div class="grid grid-cols-2 gap-2">
             <select onchange="changeCurrency(this.value)" aria-label="Moneda" class="js-currency-select w-full px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 text-xs font-extrabold cursor-pointer text-center">
               <option value="USD">Moneda: USD</option>
+              <option value="EUR">Moneda: EUR</option>
+              <option value="USDT">Moneda: USDT</option>
               <option value="CUP">Moneda: CUP</option>
-              <option value="MLC">Moneda: MLC</option>
             </select>
 
             <button onclick="toggleThemeMode()" aria-label="Cambiar Tema" class="w-full px-3 py-2 rounded-xl bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-300 dark:border-white/15 text-xs font-bold flex items-center justify-center gap-1.5 hover:border-[#7C1D18]">
