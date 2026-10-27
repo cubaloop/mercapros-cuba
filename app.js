@@ -111,9 +111,50 @@ function calculateVendorDelivery(vendor) {
   };
 }
 
-function formatMoney(amountUsd) {
+function isWholesaleContext() {
+  return (
+    activeSaleFilter === 'WHOLESALE' ||
+    activeSaleFilter === 'CONTAINER_B2B' ||
+    activeCategory === 'contenedores-b2b' ||
+    appState.currentRole === 'EXPORTADOR_B2B' ||
+    appState.currentRole === 'MIPYME'
+  );
+}
+
+function syncCurrencySelectorOptions() {
+  const wholesaleMode = isWholesaleContext();
+  if (wholesaleMode && appState.currency === 'CUP') {
+    appState.currency = 'USD';
+    saveMercaprosState(appState);
+  }
+
+  const currSelects = document.querySelectorAll('.js-currency-select');
+  currSelects.forEach(s => {
+    const cupOpt = s.querySelector('option[value="CUP"]');
+    if (wholesaleMode) {
+      if (cupOpt) cupOpt.remove();
+    } else if (!cupOpt) {
+      const mlcOpt = s.querySelector('option[value="MLC"]');
+      const newCup = document.createElement('option');
+      newCup.value = 'CUP';
+      newCup.textContent = 'Moneda: CUP';
+      if (mlcOpt) {
+        s.insertBefore(newCup, mlcOpt);
+      } else {
+        s.appendChild(newCup);
+      }
+    }
+    s.value = appState.currency || 'USD';
+  });
+}
+
+function formatMoney(amountUsd, forceNoCup = false) {
   const val = Number(amountUsd || 0);
-  const curr = appState.currency || 'USD';
+  let curr = appState.currency || 'USD';
+  // Regla: las opciones mayoristas y de contenedores NUNCA muestran moneda CUP
+  if ((forceNoCup || isWholesaleContext()) && curr === 'CUP') {
+    curr = 'USD';
+  }
   if (curr === 'CUP') {
     const cup = Math.round(val * (appState.rates.CUP || 320));
     return `${cup.toLocaleString('es-CU')} CUP`;
@@ -172,8 +213,7 @@ function applyThemeAndConnectivity() {
       : '<i class="fa-regular fa-image mr-1.5"></i>Con Fotos';
   });
 
-  const currSelects = document.querySelectorAll('.js-currency-select');
-  currSelects.forEach(s => { s.value = appState.currency; });
+  syncCurrencySelectorOptions();
 }
 
 function toggleLowDataMode() {
@@ -196,8 +236,14 @@ function toggleThemeMode() {
 }
 
 function changeCurrency(newCurr) {
-  appState.currency = newCurr;
+  if (isWholesaleContext() && newCurr === 'CUP') {
+    appState.currency = 'USD';
+    showToast('Las opciones mayoristas operan exclusivamente en USD o MLC.');
+  } else {
+    appState.currency = newCurr;
+  }
   saveMercaprosState(appState);
+  syncCurrencySelectorOptions();
   renderStoresSection();
   renderCatalog();
   updateCartUI();
@@ -217,6 +263,7 @@ function setUserRole(roleCode) {
   if (roleCode === 'MIPYME') appState.activeVendorId = 'v-mip-01';
   if (roleCode === 'TCP') appState.activeVendorId = 'v-tcp-01';
 
+  syncCurrencySelectorOptions();
   saveMercaprosState(appState);
   renderRoleBar();
   renderCategoriesBar();
@@ -239,7 +286,7 @@ function renderRoleBar() {
 }
 
 // ============================================================================
-// CATEGORÍAS (PRODUCTOS PRIMERO; PANTALLA TIENDAS ABRE AL FILTRAR "TIENDAS")
+// CATEGORÍAS Y PANEL DEL ÍCONO DE FILTRO
 // ============================================================================
 function renderCategoriesBar() {
   const bar = document.getElementById('categories-scroll-bar');
@@ -258,6 +305,8 @@ function renderCategoriesBar() {
       </button>
     `;
   }).join('');
+
+  syncFilterPanelUI();
 }
 
 function selectCategory(catId) {
@@ -265,9 +314,7 @@ function selectCategory(catId) {
   if (catId === 'contenedores-b2b') {
     activeSaleFilter = 'ALL';
   }
-  if (catId !== 'tiendas') {
-    // Si cambia a una categoría de productos o "Todo el Catálogo", limpiar filtro forzado si venía de tiendas
-  }
+  syncCurrencySelectorOptions();
   renderCategoriesBar();
   renderStoresSection();
   renderCatalog();
@@ -283,6 +330,8 @@ function setSaleModeFilter(mode) {
       btn.className = 'js-salemode-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200/70 dark:bg-white/10 hover:bg-stone-300/70 shrink-0 transition-all';
     }
   });
+  syncCurrencySelectorOptions();
+  syncFilterPanelUI();
   renderCatalog();
 }
 
@@ -293,7 +342,90 @@ function handleSearchInput(val) {
 
 function handleSortChange(val) {
   currentSort = val;
+  syncFilterPanelUI();
   renderCatalog();
+}
+
+function toggleCatalogFilterPanel(forceState) {
+  const panel = document.getElementById('catalog-filter-panel');
+  const btn = document.getElementById('catalog-filter-btn');
+  if (!panel) return;
+  const shouldOpen = typeof forceState === 'boolean' ? forceState : panel.classList.contains('hidden');
+  if (shouldOpen) {
+    syncFilterPanelUI();
+    panel.classList.remove('hidden');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  } else {
+    panel.classList.add('hidden');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function setVendorFilterFromPanel(vendorId) {
+  activeVendorFilter = vendorId || 'ALL';
+  syncFilterPanelUI();
+  renderStoresSection();
+  renderCatalog();
+}
+
+function resetAllCatalogFilters() {
+  activeCategory = 'all';
+  activeSaleFilter = 'ALL';
+  activeVendorFilter = 'ALL';
+  currentSort = 'featured';
+  setSaleModeFilter('ALL');
+  renderCategoriesBar();
+  renderStoresSection();
+  renderCatalog();
+  showToast('Filtros restablecidos.');
+}
+
+function syncFilterPanelUI() {
+  const sortEl = document.getElementById('catalog-sort-select');
+  if (sortEl) sortEl.value = currentSort;
+
+  const catSelect = document.getElementById('filter-panel-category-select');
+  if (catSelect) {
+    catSelect.innerHTML = appState.categories
+      .filter(c => c.id !== 'tiendas')
+      .map(c => `<option value="${c.id}" ${c.id === activeCategory ? 'selected' : ''}>${c.name}</option>`)
+      .join('');
+  }
+
+  const vendorSelect = document.getElementById('filter-panel-vendor-select');
+  if (vendorSelect) {
+    const vOpts = [`<option value="ALL" ${activeVendorFilter === 'ALL' ? 'selected' : ''}>Todas las Tiendas</option>`].concat(
+      appState.vendors.map(v => `<option value="${v.id}" ${v.id === activeVendorFilter ? 'selected' : ''}>${v.name}</option>`)
+    );
+    vendorSelect.innerHTML = vOpts.join('');
+  }
+
+  // Contar cuántos filtros activos hay para resaltar el botón del ícono de filtro
+  let activeCount = 0;
+  if (currentSort !== 'featured') activeCount++;
+  if (activeCategory !== 'all' && activeCategory !== 'tiendas') activeCount++;
+  if (activeSaleFilter !== 'ALL') activeCount++;
+  if (activeVendorFilter !== 'ALL') activeCount++;
+
+  const badge = document.getElementById('catalog-filter-badge');
+  const btn = document.getElementById('catalog-filter-btn');
+  if (badge) {
+    if (activeCount > 0) {
+      badge.textContent = String(activeCount);
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    } else {
+      badge.classList.add('hidden');
+      badge.classList.remove('flex');
+    }
+  }
+  if (btn) {
+    if (activeCount > 0) {
+      btn.className = 'relative w-9 h-9 rounded-xl bg-[#7C1D18] text-white border border-[#7C1D18] flex items-center justify-center transition-all shadow-sm';
+    } else {
+      btn.className = 'relative w-9 h-9 rounded-xl bg-[#F7F5F0] dark:bg-[#171413] hover:bg-[#7C1D18] hover:text-white border border-stone-300 dark:border-white/15 flex items-center justify-center transition-all shadow-sm';
+    }
+  }
 }
 
 // ============================================================================
@@ -437,7 +569,7 @@ function renderCatalog() {
     if (activeSaleFilter === 'CONTAINER_B2B' && !p.saleModes.includes('CONTAINER_B2B')) return false;
     if (activeSaleFilter === 'WHOLESALE' && !p.saleModes.includes('WHOLESALE')) return false;
     if (activeSaleFilter === 'RETAIL' && !p.saleModes.includes('RETAIL')) return false;
-    if (activeSaleFilter === 'FLASH' && !p.isFlashOffer) return false;
+    if ((activeSaleFilter === 'FLASH' || currentSort === 'flash') && !p.isFlashOffer) return false;
 
     if (searchQuery) {
       const haystack = `${p.title} ${p.sku} ${p.vendorName} ${p.specs} ${p.description}`.toLowerCase();
@@ -453,6 +585,8 @@ function renderCatalog() {
     filtered.sort((a, b) => (b.priceContainerUsd || b.priceRetailUsd) - (a.priceContainerUsd || a.priceRetailUsd));
   }
 
+  syncFilterPanelUI();
+
   if (countEl) {
     countEl.textContent = `${filtered.length} producto${filtered.length === 1 ? '' : 's'}`;
   }
@@ -461,7 +595,7 @@ function renderCatalog() {
     grid.innerHTML = `
       <div class="col-span-full rounded-3xl p-8 text-center bg-[#FFFFFF] dark:bg-[#211D1B] border border-stone-200 dark:border-white/10">
         <p class="font-display text-base font-bold">No hay productos que coincidan con tu filtro</p>
-        <button onclick="activeVendorFilter='ALL'; selectCategory('all'); setSaleModeFilter('ALL');" class="mt-3 px-4 py-2 rounded-xl bg-[#2A2522] text-white text-xs font-bold">
+        <button onclick="resetAllCatalogFilters()" class="mt-3 px-4 py-2 rounded-xl bg-[#2A2522] text-white text-xs font-bold">
           Ver Todo el Catálogo
         </button>
       </div>
@@ -478,10 +612,19 @@ function renderCatalog() {
     const canBuyThisWholesale = hasWholesale && role.canBuyWholesale;
     const canBuyThisRetail = hasRetail && role.canBuyRetail;
 
-    const primaryPriceUsd = isContainerItem ? p.priceContainerUsd : p.priceRetailUsd;
+    const showWholesalePrimary = !isContainerItem && activeSaleFilter === 'WHOLESALE' && hasWholesale;
+    const primaryPriceUsd = isContainerItem
+      ? p.priceContainerUsd
+      : showWholesalePrimary
+      ? p.priceWholesaleUsd
+      : p.priceRetailUsd;
+    const isPrimaryWholesaleOrB2B = isContainerItem || showWholesalePrimary;
+
     const primaryUnitText = isContainerItem
       ? `${p.unitRetail}${p.unitPriceLabel ? ` • ${p.unitPriceLabel}` : ''}`
-      : `${p.unitRetail}${hasWholesale ? ` • Mayor: ${formatMoney(p.priceWholesaleUsd)} (${p.unitWholesale})` : ''}`;
+      : showWholesalePrimary
+      ? `${p.unitWholesale} (Mín. ${p.minWholesaleQty || 1}+)`
+      : `${p.unitRetail}${hasWholesale ? ` • Mayor: ${formatMoney(p.priceWholesaleUsd, true)} (${p.unitWholesale})` : ''}`;
 
     // Foto sin botón de WhatsApp; al hacer clic abre la pantalla independiente del producto
     const mediaHtml = appState.lowDataMode
@@ -497,16 +640,16 @@ function renderCatalog() {
         </div>
       `;
 
-    // Bloque minimalista de Precio + Unidad de Medida
+    // Bloque minimalista de Precio + Unidad de Medida (Mayorista y Contenedores nunca muestran CUP)
     const pricingBlock = `
       <div onclick="openProductDetailModal('${p.id}')" class="product-price cursor-pointer p-3 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200/80 dark:border-white/10">
-        <div class="text-lg font-extrabold tracking-tight">${formatMoney(primaryPriceUsd).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
+        <div class="text-lg font-extrabold tracking-tight">${formatMoney(primaryPriceUsd, isPrimaryWholesaleOrB2B).replace(/ (USD|CUP|MLC)$/, ' <small class="price-currency">$1</small>')}</div>
         <div class="text-[11px] font-semibold opacity-80 mt-0.5" title="${primaryUnitText}">${primaryUnitText}</div>
       </div>
     `;
 
     // Botón de acción: "Añadir" con ícono del carrito de compras
-    let defaultAddMode = isContainerItem ? 'CONTAINER_B2B' : (canBuyThisRetail ? 'RETAIL' : 'WHOLESALE');
+    let defaultAddMode = isContainerItem ? 'CONTAINER_B2B' : (showWholesalePrimary ? 'WHOLESALE' : (canBuyThisRetail ? 'RETAIL' : 'WHOLESALE'));
     let canAdd = isContainerItem ? canBuyThisContainer : (canBuyThisRetail || canBuyThisWholesale);
 
     const actionButtons = canAdd
@@ -614,6 +757,7 @@ function renderProductDetailModalContent(productId) {
     (detailModalMode === 'RETAIL' && role.canBuyRetail);
 
   const lineTotalUsd = activeUnitPriceUsd * detailModalQty;
+  const isDetailWholesaleOrB2B = detailModalMode === 'WHOLESALE' || detailModalMode === 'CONTAINER_B2B';
 
   bodyEl.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -649,13 +793,13 @@ function renderProductDetailModalContent(productId) {
           <p class="text-xs sm:text-sm opacity-85 mt-2 leading-relaxed">${p.description || 'Producto verificado disponible en el catálogo oficial de Mercapros Cuba.'}</p>
         </div>
 
-        <!-- Desglose de Precios y Unidades de Medida -->
+        <!-- Desglose de Precios y Unidades de Medida (Mayorista y Contenedores sin CUP) -->
         <div class="p-4 rounded-2xl bg-stone-100/90 dark:bg-white/5 border border-stone-200 dark:border-white/10 space-y-3">
           ${isContainerItem ? `
             <div class="flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <span class="text-xs font-bold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">Precio por Contenedor CIF Mariel</span>
-                <span class="text-2xl sm:text-3xl font-extrabold">${formatMoney(p.priceContainerUsd)}</span>
+                <span class="text-2xl sm:text-3xl font-extrabold">${formatMoney(p.priceContainerUsd, true)}</span>
               </div>
               <div class="text-right">
                 <span class="text-xs font-bold opacity-75 block">Costo Unitario Referencial</span>
@@ -675,7 +819,7 @@ function renderProductDetailModalContent(productId) {
                     : 'bg-white/60 dark:bg-white/5 border-stone-200 dark:border-white/10'
                 }">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-[#7C1D18] dark:text-[#F2AE79] block">Compra Minorista</span>
-                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceRetailUsd)}</span>
+                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceRetailUsd, false)}</span>
                   <span class="text-xs opacity-80 block mt-0.5">Unidad: <strong>${p.unitRetail}</strong></span>
                 </button>
               ` : ''}
@@ -686,7 +830,7 @@ function renderProductDetailModalContent(productId) {
                     : 'bg-white/60 dark:bg-white/5 border-stone-200 dark:border-white/10'
                 }">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">Compra Mayorista (Mín. ${p.minWholesaleQty}+)</span>
-                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceWholesaleUsd)}</span>
+                  <span class="text-xl font-extrabold block mt-0.5">${formatMoney(p.priceWholesaleUsd, true)}</span>
                   <span class="text-xs opacity-80 block mt-0.5">Unidad: <strong>${p.unitWholesale}</strong></span>
                 </button>
               ` : ''}
@@ -707,7 +851,7 @@ function renderProductDetailModalContent(productId) {
               <span class="font-semibold block mt-0.5">
                 ${deliv.isCifPort
                   ? 'CIF Puerto del Mariel, Cuba (Flete marítimo incluido)'
-                  : `${appState.selectedMunicipality} • ${deliv.distanceKm} km (${formatMoney(deliv.feeUsd)})`
+                  : `${appState.selectedMunicipality} • ${deliv.distanceKm} km (${formatMoney(deliv.feeUsd, isDetailWholesaleOrB2B)})`
                 }
               </span>
             </div>
@@ -733,7 +877,7 @@ function renderProductDetailModalContent(productId) {
           ${canBuyCurrentMode ? `
             <button type="button" onclick="addToCartWithQty('${p.id}', '${detailModalMode}', ${detailModalQty}); closeProductDetailModal();" class="flex-1 py-3.5 px-5 rounded-2xl bg-[#2A2522] hover:bg-[#7C1D18] dark:bg-[#F2AE79] dark:text-[#171413] text-white font-extrabold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2">
               <i class="fa-solid fa-cart-shopping"></i>
-              <span>Añadir (${formatMoney(lineTotalUsd)})</span>
+              <span>Añadir (${formatMoney(lineTotalUsd, isDetailWholesaleOrB2B)})</span>
             </button>
           ` : `
             <button type="button" onclick="closeProductDetailModal(); openUserAuthModal();" class="flex-1 py-3.5 px-5 rounded-2xl bg-[#7C1D18] text-white font-extrabold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2">
@@ -825,11 +969,13 @@ function updateCartUI() {
 
   let subtotalUsd = 0;
   const uniqueVendorIds = new Set();
+  const hasAnyWholesaleInCart = cart.some(i => i.mode === 'WHOLESALE' || i.mode === 'CONTAINER_B2B');
 
   listEl.innerHTML = cart.map(item => {
     const lineUsd = item.unitPriceUsd * item.qty;
     subtotalUsd += lineUsd;
     uniqueVendorIds.add(item.vendorId);
+    const isWholesaleLine = item.mode === 'WHOLESALE' || item.mode === 'CONTAINER_B2B';
 
     return `
       <div class="p-3 rounded-2xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 flex items-center justify-between gap-2">
@@ -837,7 +983,7 @@ function updateCartUI() {
           <span class="text-[10px] font-bold text-[#7C1D18] dark:text-[#F2AE79] block">${item.vendorName}</span>
           <h4 class="font-bold text-xs truncate">${item.title}</h4>
           <p class="text-[11px] opacity-75">${item.unitLabel}</p>
-          <p class="text-xs font-extrabold mt-0.5">${formatMoney(lineUsd)}</p>
+          <p class="text-xs font-extrabold mt-0.5">${formatMoney(lineUsd, isWholesaleLine)}</p>
         </div>
         <div class="flex items-center gap-1.5">
           <button onclick="updateCartItemQty('${item.cartKey}', -1)" class="w-7 h-7 rounded-lg bg-white dark:bg-white/10 border border-stone-300 dark:border-white/10 font-bold text-xs">-</button>
@@ -867,12 +1013,12 @@ function updateCartUI() {
       </div>
       <div class="flex justify-between">
         <span class="opacity-75">Subtotal Catálogo:</span>
-        <span class="font-bold">${formatMoney(subtotalUsd)}</span>
+        <span class="font-bold">${formatMoney(subtotalUsd, hasAnyWholesaleInCart)}</span>
       </div>
       ${totalDeliveryUsd > 0 ? `
         <div class="flex justify-between text-emerald-800 dark:text-emerald-300">
           <span>Domicilio GPS:</span>
-          <span class="font-bold">${formatMoney(totalDeliveryUsd)}</span>
+          <span class="font-bold">${formatMoney(totalDeliveryUsd, hasAnyWholesaleInCart)}</span>
         </div>
       ` : `
         <div class="flex justify-between text-emerald-800 dark:text-emerald-300">
@@ -882,7 +1028,7 @@ function updateCartUI() {
       `}
       <div class="flex justify-between text-base font-extrabold pt-2 border-t border-stone-200 dark:border-white/10">
         <span>Total Estimado:</span>
-        <span>${formatMoney(grandTotalUsd)}</span>
+        <span>${formatMoney(grandTotalUsd, hasAnyWholesaleInCart)}</span>
       </div>
     </div>
   `;
@@ -1334,8 +1480,8 @@ function renderAdminDashboard() {
             <h5 class="font-bold text-xs sm:text-sm truncate">${p.title}</h5>
             <p class="text-xs text-[#7C1D18] dark:text-[#F2AE79] font-bold">
               ${p.saleModes.includes('CONTAINER_B2B')
-                ? `Contenedor CIF: ${formatMoney(p.priceContainerUsd)} (${p.unitPriceLabel || ''})`
-                : `Minorista: ${formatMoney(p.priceRetailUsd)}${p.saleModes.includes('WHOLESALE') ? ` • Mayorista: ${formatMoney(p.priceWholesaleUsd)}` : ''}`
+                ? `Contenedor CIF: ${formatMoney(p.priceContainerUsd, true)} (${p.unitPriceLabel || ''})`
+                : `Minorista: ${formatMoney(p.priceRetailUsd, false)}${p.saleModes.includes('WHOLESALE') ? ` • Mayorista: ${formatMoney(p.priceWholesaleUsd, true)}` : ''}`
               }
             </p>
           </div>
